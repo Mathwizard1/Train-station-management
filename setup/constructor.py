@@ -1,58 +1,29 @@
 import pymysql
 
+from config import DATABASE_NAME, STATION_NAME, TRAIN_NAME, COACH_NAME
+
 # ---------- Configuration ----------
 HOST = 'localHOST'        # or your DB HOST
 USER = 'root'
 PASSWORD = 'pass@123'
-DATABASE_NAME = 'TrainMangament'
 # DUMP_FILE = ''
 
 # ---------- SQL TABLE Definitions ----------
 station_table = """
-CREATE TABLE USERs (
+CREATE TABLE Stations(
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100),
     email VARCHAR(100) UNIQUE
 );
 """
 train_table = """
-CREATE TABLE USERs (
+CREATE TABLE Trains (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100),
     email VARCHAR(100) UNIQUE
 );
 """
 schedule_table = """
-CREATE TABLE posts (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    USER_id INT,
-    title VARCHAR(200),
-    content TEXT,
-    FOREIGN KEY (USER_id) REFERENCES USERs(id)
-);
-"""
-
-coach_table = """
-CREATE TABLE comments (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    post_id INT,
-    USER_id INT,
-    comment TEXT,
-    FOREIGN KEY (post_id) REFERENCES posts(id),
-    FOREIGN KEY (USER_id) REFERENCES USERs(id)
-);
-"""
-ticket_table = """
-CREATE TABLE posts (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    USER_id INT,
-    title VARCHAR(200),
-    content TEXT,
-    FOREIGN KEY (USER_id) REFERENCES USERs(id)
-);
-"""
-
-booking_table = """
 CREATE TABLE posts (
     id INT AUTO_INCREMENT PRIMARY KEY,
     USER_id INT,
@@ -93,7 +64,7 @@ try:
         cursor.execute(train_table)
         
 
-        cursor.execute(coach_table)
+        #cursor.execute(coach_table)
     
 
     connection.commit()

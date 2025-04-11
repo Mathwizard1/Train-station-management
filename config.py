@@ -1,0 +1,4 @@
+DATABASE_NAME = 'TrainMangament'
+STATION_NAME = ''
+TRAIN_NAME = ''
+COACH_NAME = ''
