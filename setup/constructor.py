@@ -7,7 +7,7 @@ PASSWORD = 'pass@123'
 DATABASE_NAME = 'TrainMangament'
 # DUMP_FILE = ''
 
-# ---------- SQL Definitions ----------
+# ---------- SQL TABLE Definitions ----------
 station_table = """
 CREATE TABLE USERs (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -15,12 +15,20 @@ CREATE TABLE USERs (
     email VARCHAR(100) UNIQUE
 );
 """
-
 train_table = """
 CREATE TABLE USERs (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100),
     email VARCHAR(100) UNIQUE
+);
+"""
+schedule_table = """
+CREATE TABLE posts (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    USER_id INT,
+    title VARCHAR(200),
+    content TEXT,
+    FOREIGN KEY (USER_id) REFERENCES USERs(id)
 );
 """
 
@@ -34,8 +42,7 @@ CREATE TABLE comments (
     FOREIGN KEY (USER_id) REFERENCES USERs(id)
 );
 """
-
-schedule_table = """
+ticket_table = """
 CREATE TABLE posts (
     id INT AUTO_INCREMENT PRIMARY KEY,
     USER_id INT,
@@ -44,6 +51,20 @@ CREATE TABLE posts (
     FOREIGN KEY (USER_id) REFERENCES USERs(id)
 );
 """
+
+booking_table = """
+CREATE TABLE posts (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    USER_id INT,
+    title VARCHAR(200),
+    content TEXT,
+    FOREIGN KEY (USER_id) REFERENCES USERs(id)
+);
+"""
+
+# ---------- SQL TRIGGER Definitions ----------
+
+
 
 # ---------- Connection and Execution ----------
 try:
@@ -66,14 +87,14 @@ try:
     connection.select_db(DATABASE_NAME)
 
     with connection.cursor() as cursor:
-        cursor.execute(table1_sql)
-        print("Table `USERs` created.")
+        cursor.execute(station_table)
+        
 
-        cursor.execute(table2_sql)
-        print("Table `posts` created.")
+        cursor.execute(train_table)
+        
 
-        cursor.execute(table3_sql)
-        print("Table `comments` created.")
+        cursor.execute(coach_table)
+    
 
     connection.commit()
 
