@@ -13,16 +13,19 @@ class TABLE_SQL:
         constraint = ""
 
         # Table columns
-        for column in self.columns:
+        for idx,column in enumerate(self.columns):
             if(column in self.constraints):
                 constraint = self.constraints[column]
-            query_segments.append(f"{column} {self.columns[column]} {constraint},\n")
+
+            query_segments.append(f"{column} {self.columns[column]} {constraint}")
+            if(idx!=len(self.columns)-1):
+                query_segments.append(",")
             constraint = ""
 
         # Table constraints
         for constraint in self.constraints:
             if(constraint not in self.columns_name):
-                query_segments.append(f"CONSTRAINT {constraint} {self.constraints[constraint]},\n")
+                query_segments.append(f"CONSTRAINT {constraint} {self.constraints[constraint]},")
 
         query_segments.append(");")
 
@@ -41,20 +44,22 @@ class DATABASE_SQL:
 
     def database_setup(self, tables_list, triggers_list= []):
         self._connect()
+        self.cursor=self.connection.cursor()
 
-        with self.connection.cursor() as cursor:
-            cursor.execute(f"DROP DATABASE IF EXISTS {self.name}")
-            cursor.execute(f"CREATE DATABASE {self.name}")
-            print(f"Database {self.name} created.")
+        self.cursor.execute(f"DROP DATABASE IF EXISTS {self.name}")
+        self.cursor.execute(f"CREATE DATABASE {self.name}")
+        print(f"Database {self.name} created.")
 
         self._set_database()
 
         # Create all other objects
         for table in tables_list:
-            cursor.execute(table._create_self())
+            self.cursor.execute(table._create_self())
 
         for trigger in triggers_list:
-            cursor.execute(trigger._create_self())
+            self.cursor.execute(trigger._create_self())
+
+        print("Database Initialized")
 
         # End connection
         self.connection.commit()
@@ -86,14 +91,15 @@ class DATABASE_SQL:
 
 
 if(__name__ == "__main__"):
-    station_table = TABLE_SQL(
-        "Stations",
+
+    student_table = TABLE_SQL(
+        "Students",
         columns_dict= {
             "Stid": "INT(5)",
             "Stname": "VARCHAR(20)",
         },
         constraints= {
-            "Stid": "PRIMARY KEY AUTO INCREMENT",
+            "Stid": "AUTO_INCREMENT PRIMARY KEY",
         }
     )
 
@@ -103,10 +109,10 @@ if(__name__ == "__main__"):
         columns_dict= {
             "Trid": "INT(5)",
             "Trname": "VARCHAR(20)",
-            "Trstatus": r"ENUM("","","")"
+            "Trstatus": r"ENUM('Departed','Stationed','Incoming')"
         },
         constraints= {
-            "Sid": "PRIMARY KEY AUTO INCREMENT",
+            "Trid": "AUTO_INCREMENT PRIMARY KEY",
         }
     )
 
@@ -117,16 +123,18 @@ if(__name__ == "__main__"):
             "Sname": "VARCHAR(20)",
         },
         constraints= {
-            "Sid": "PRIMARY KEY AUTO INCREMENT",
+            "Sid": "AUTO_INCREMENT PRIMARY KEY",
         }
     )
 
-    print(station_table._create_self())
+    #print(station_table._create_self())
 
     TABLES_table = [
+        student_table,
+        train_table,
         station_table,
     ]
 
 
-    #db_interface = DATABASE_SQL()
-    #db_interface.database_setup(tables_list= TABLES_table)
+    db_interface = DATABASE_SQL()
+    db_interface.database_setup(tables_list= TABLES_table)

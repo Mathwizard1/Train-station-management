@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for
-from application.server.databaseConnector import debug_print
+#from application.server.databaseConnector import debug_print
 
 app = Flask(__name__)
 
@@ -22,7 +22,7 @@ def login():
 
 @app.route('/home')
 def home():
-    debug_print()
+    #debug_print()
     return render_template('home.html')
 
 if __name__ == '__main__':
