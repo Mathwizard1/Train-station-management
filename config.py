@@ -52,18 +52,30 @@ class DATABASE_SQL:
 
         self._set_database()
 
-        # Create all other objects
-        for table in tables_list:
-            self.cursor.execute(table._create_self())
+        try:
+            # Create all other objects
+            for table in tables_list:
+                self.cursor.execute(table._create_self())
 
-        for trigger in triggers_list:
-            self.cursor.execute(trigger._create_self())
+            print("Tables Initialized")
+        except:
+            print("Error in Initialization Table.")
+            exit(0)
 
-        print("Database Initialized")
+        try:
+            # Create all other objects
+            for trigger in triggers_list:
+                self.cursor.execute(trigger._create_self())
+
+            print("Triggers Initialized")
+        except:
+            print("Error in Initialization Trigger.")
+            exit(0)
+
+        print("database Initialised.")
 
         # End connection
         self.connection.commit()
-
         self._disconnect()
 
     def _connect(self):
@@ -92,11 +104,12 @@ class DATABASE_SQL:
 
 if(__name__ == "__main__"):
 
-    student_table = TABLE_SQL(
-        "Students",
+    station_table = TABLE_SQL(
+        "Stations",
         columns_dict= {
             "Stid": "INT(5)",
             "Stname": "VARCHAR(20)",
+            "Stcity": "VARCHAR(20)"
         },
         constraints= {
             "Stid": "AUTO_INCREMENT PRIMARY KEY",
@@ -109,6 +122,7 @@ if(__name__ == "__main__"):
         columns_dict= {
             "Trid": "INT(5)",
             "Trname": "VARCHAR(20)",
+            "Trcoach": "VARCHAR(20)",
             "Trstatus": r"ENUM('Departed','Stationed','Incoming')"
         },
         constraints= {
@@ -116,10 +130,62 @@ if(__name__ == "__main__"):
         }
     )
 
-    station_table = TABLE_SQL(
-        "Stations",
+    customer_table = TABLE_SQL(
+        "Customers",
         columns_dict= {
-            "Sid": "INT(5)",
+            "Cuid": "INT(5)",
+            "Cuname": "VARCHAR(20)",
+            "Cuage": "INT(3)",
+            "Cugender": "CHAR(1)"   
+        },
+        constraints= {
+            "Cuid": "AUTO_INCREMENT PRIMARY KEY",
+        }
+    )
+
+    schedule_table = TABLE_SQL(
+        "Schedules",
+        columns_dict= {
+            "Shid": "INT(5)",
+            "ShTrid": "INT(5)",
+            "SharvStid": "INT(5)",
+            "Sharvtime": "DATETIME",
+            "ShdepStid": "INT(5)",
+            "Shdeptime": "DATETIME",
+        },
+        constraints= {
+            "Shid": "AUTO_INCREMENT PRIMARY KEY",
+        }
+    )
+
+    coach_table = TABLE_SQL(
+        "Coachs",
+        columns_dict= {
+            "Coname": "VARCHAR(20)",
+            "Comaxsize": "INT(5)"
+        },
+        constraints= {
+            "Coname": "AUTO_INCREMENT PRIMARY KEY",
+        }
+    )
+
+    coach_info_table = TABLE_SQL(
+        "Coach_infos",
+        columns_dict= {
+            "Ciid": "INT(5)",
+            "CiConame": "VARCHAR(20)",
+            "Cisize": "INT(2)",
+            "CiComaxsize": "INT(5)"
+        },
+        constraints= {
+            "Ciid": "AUTO_INCREMENT PRIMARY KEY",
+        }
+    )
+
+    waiting_table = TABLE_SQL(
+        "Waitings",
+        columns_dict= {
+            "Wid": "INT(5)",
             "Sname": "VARCHAR(20)",
         },
         constraints= {
@@ -127,14 +193,30 @@ if(__name__ == "__main__"):
         }
     )
 
-    #print(station_table._create_self())
+    cancellation_table = TABLE_SQL(
+        "Cancelletations",
+        columns_dict= {
+            "Caid": "INT(5)",
+            "Sname": "VARCHAR(20)",
+        },
+        constraints= {
+            "Sid": "AUTO_INCREMENT PRIMARY KEY",
+        }
+    )
+
+    print(station_table._create_self())
 
     TABLES_table = [
-        student_table,
-        train_table,
         station_table,
+        train_table,
+        customer_table,
+        schedule_table,
+        coach_table,
+        coach_info_table,
+        waiting_table,
+        cancellation_table
     ]
 
 
-    db_interface = DATABASE_SQL()
-    db_interface.database_setup(tables_list= TABLES_table)
+    #db_interface = DATABASE_SQL()
+    #db_interface.database_setup(tables_list= TABLES_table)
