@@ -23,9 +23,10 @@ class TABLE_SQL:
             constraint = ""
 
         # Table constraints
-        for constraint in self.constraints:
+        for idx,constraint in enumerate(self.constraints):
             if(constraint not in self.columns_name):
-                query_segments.append(f"CONSTRAINT {constraint} {self.constraints[constraint]},")
+                query_segments.append(",")
+                query_segments.append(f"CONSTRAINT {constraint} {self.constraints[constraint]}")
 
         query_segments.append(");")
 
@@ -155,41 +156,56 @@ if(__name__ == "__main__"):
         },
         constraints= {
             "Shid": "AUTO_INCREMENT PRIMARY KEY",
+            "fk_ShTrid": "FOREIGN KEY(ShTrid) REFERENCES Trains(Trid)",
+            "fk_SharvStid": "FOREIGN KEY(SharvStid) REFERENCES Stations(Stid)",
+            "fk_ShdepStid": "FOREIGN KEY(ShdepStid) REFERENCES Stations(Stid)"
         }
     )
 
     coach_table = TABLE_SQL(
         "Coachs",
         columns_dict= {
-            "Coname": "VARCHAR(20)",
+            "Coname": "CHAR(5)",
             "Comaxsize": "INT(5)"
         },
         constraints= {
-            "Coname": "AUTO_INCREMENT PRIMARY KEY",
+            "Coname": "PRIMARY KEY",
         }
     )
 
     coach_info_table = TABLE_SQL(
         "Coach_infos",
         columns_dict= {
-            "Ciid": "INT(5)",
-            "CiConame": "VARCHAR(20)",
+            "CiTrid": "INT(5)",
+            "CiConame": "CHAR(5)",
             "Cisize": "INT(2)",
             "CiComaxsize": "INT(5)"
         },
         constraints= {
-            "Ciid": "AUTO_INCREMENT PRIMARY KEY",
+            "pk_TrCo": "PRIMARY KEY(CiTrid, CiConame)",
+            "fk_CiTrid": "FOREIGN KEY(CiTrid) REFERENCES Trains(Trid)",
+            "fk_CiConame": "FOREIGN KEY(CiConame) REFERENCES Coachs(Coname)"
+        }
+    )
+
+    ticket_table = TABLE_SQL(
+        "Tickets",
+        columns_dict= {
+
+        },
+        constraints= {
+
         }
     )
 
     waiting_table = TABLE_SQL(
         "Waitings",
         columns_dict= {
-            "Wid": "INT(5)",
-            "Sname": "VARCHAR(20)",
+            "Waid": "INT(5)",
+            "Waname": "VARCHAR(20)",
         },
         constraints= {
-            "Sid": "AUTO_INCREMENT PRIMARY KEY",
+            "Waid": "AUTO_INCREMENT PRIMARY KEY",
         }
     )
 
@@ -197,14 +213,14 @@ if(__name__ == "__main__"):
         "Cancelletations",
         columns_dict= {
             "Caid": "INT(5)",
-            "Sname": "VARCHAR(20)",
+            "Caname": "VARCHAR(20)",
         },
         constraints= {
-            "Sid": "AUTO_INCREMENT PRIMARY KEY",
+            "Caid": "AUTO_INCREMENT PRIMARY KEY",
         }
     )
 
-    print(station_table._create_self())
+    # print(coach_info_table._create_self())
 
     TABLES_table = [
         station_table,
@@ -213,10 +229,10 @@ if(__name__ == "__main__"):
         schedule_table,
         coach_table,
         coach_info_table,
-        waiting_table,
-        cancellation_table
+        #waiting_table,
+        #cancellation_table
     ]
 
 
-    #db_interface = DATABASE_SQL()
-    #db_interface.database_setup(tables_list= TABLES_table)
+    db_interface = DATABASE_SQL()
+    db_interface.database_setup(tables_list= TABLES_table)
