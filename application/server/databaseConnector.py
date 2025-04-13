@@ -118,6 +118,7 @@ class DatabaseConnector:
             output.append(out)
         return output
     
+    #Convert Train Name to Train ID
     def train_id_retriever(self,train_name):
          query=f"SELECT tr.Trid FROM coach_infos as coi inner join trains as tr on coi.CiTrid=tr.Trid where tr.Trname='{train_name}';"
          self.execute_query(query)
@@ -230,6 +231,13 @@ class DatabaseConnector:
         return
     
     def add_customer(self,info):
+        query=f"SELECT * FROM customers where Cuid={info[0]};"
+        self.execute_query(query)
+        row=self.cursor.fetchone()
+        if(row!=None):
+            print(f"ERROR: Duplicate ID '{info[0]}' Found")
+            return -1
+
         query=f"INSERT INTO customers VALUES ({info[0]},'{info[1]}',{info[2]},'{info[3]}');"
         self.execute_query(query=query)
         
@@ -242,6 +250,7 @@ if __name__=="__main__":
 
     connector.clear_table('tickets')
     connector.clear_table('waitings')
+    connector.add_customer([3,"Tejeshwar",20,'M'])
     connector.create_ticket(train="Rajdhani Express",coach="A1",custid=1,check_available=True)
     connector.create_waiting(train="Rajdhani Express",coach="A1",custid=2)
     connector.cancel_ticket(1,"Rajdhani Express","A1")
