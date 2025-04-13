@@ -253,11 +253,11 @@ if(__name__ == "__main__"):
     )
 
     schedule_data = (
-        (1001, train_data[0][0], station_data[0][0], "2025-04-14 10:00:00", station_data[1][0], "2025-04-14 10:15:00"),
-        (1002, train_data[0][0], station_data[1][0], "2025-04-14 12:30:00", station_data[3][0], "2025-04-14 12:45:00"),  
-        (1003, train_data[0][0], station_data[3][0], "2025-04-14 15:00:00", station_data[2][0], "2025-04-14 15:15:00"), 
-        (1004, train_data[1][0], station_data[2][0], "2025-04-16 18:45:00", station_data[4][0], "2025-04-16 19:00:00"),  
-        (1005, train_data[1][0], station_data[4][0], "2025-04-16 21:15:00", station_data[0][0], "2025-04-16 21:30:00"),  
+        (1001, 123, 12, "2025-04-14 10:00:00", 56, "2025-04-14 10:15:00"),
+        (1002, 123, 56, "2025-04-14 12:30:00", 89, "2025-04-14 12:45:00"),  
+        (1003, 123, 89, "2025-04-14 15:00:00", 34, "2025-04-14 15:15:00"), 
+        (1004, 456, 34, "2025-04-16 18:45:00", 71, "2025-04-16 19:00:00"),  
+        (1005, 456, 71, "2025-04-16 21:15:00", 12, "2025-04-16 21:30:00"),  
     )
 
     schedule_table._fill_self(schedule_data)
@@ -304,16 +304,10 @@ if(__name__ == "__main__"):
         }
     )
 
-    coach_info_data = (
-
-    )
-
-    coach_info_table._fill_self(coach_info_data)
-
     ticket_table = TABLE_SQL(
         "Tickets",
         columns_dict= {
-            "Tiid": "CHAR(5)",
+            "Tiid": "INT(5)",
             "TiTrid": "INT(5)",
             "TiConame": "CHAR(5)",
             "TiCuid": "INT(5)",
@@ -335,7 +329,6 @@ if(__name__ == "__main__"):
             "WaCuid": "INT(5)",
             "WaTrid": "INT(5)",
             "WaConame": "CHAR(5)",
-            "Wapref": "CHAR(5)"
         },
         constraints= {
             "Waid": "AUTO_INCREMENT PRIMARY KEY",
@@ -361,7 +354,7 @@ if(__name__ == "__main__"):
     )
 
     #print(coach_info_table._create_self())
-    print(schedule_table._create_fill())
+    #print(customer_table._create_fill())
 
     TABLES_table = [
         station_table,
@@ -371,18 +364,17 @@ if(__name__ == "__main__"):
         coach_table,
         coach_info_table,
         waiting_table,
-        cancellation_table
+        cancellation_table,
+        ticket_table,
     ]
 
     FILL_table = [
         station_table,
         train_table,
+        
         customer_table,
-        schedule_table,
+
         coach_table,
-
-
-
     ]
 
     db_interface = DATABASE_SQL()

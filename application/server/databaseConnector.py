@@ -1,4 +1,6 @@
 import pymysql
+import numpy as np
+import datetime
 
 class DatabaseConnector:
     def __init__(self):
@@ -22,7 +24,7 @@ class DatabaseConnector:
             print(f"Connection Established With Server")
         except:
             print(f"ERROR: Could Not Connect To Server")
-            return
+            return -1
 
         if(dbname!=""):
             self.set_database(dbname=dbname)
@@ -36,13 +38,13 @@ class DatabaseConnector:
             print(f"Connected To Database {dbname}")
         except:
             print(f"ERROR: Could Not Connect To Database {dbname}")
-            return
+            return -1
 
     #Retrieve Tables
     def get_tables(self,store=False):
         if(self.dbname==""):
             print("ERROR: Database Not Set")
-            return
+            return -1
 
         try:
             self.execute_query("SHOW TABLES;")
@@ -59,7 +61,7 @@ class DatabaseConnector:
 
         except:
             print("ERROR: Could Not Retrieve Tables")
-            return
+            return -1
 
     #Add Entry
     def insert_entry(self,table,entry):
@@ -67,7 +69,7 @@ class DatabaseConnector:
             query=f"INSERT INTO {table} VALUES ("
             for idx,value in enumerate(entry):
 
-                if(type(value)==str):
+                if(type(value)==str or type(value)==datetime.datetime):
                     if(value=='NULL'):
                         query+=f"{value}"
                     else:
@@ -83,7 +85,7 @@ class DatabaseConnector:
             
         except:
             print(f"ERROR: Could Not Add Entry Into {table}")
-            return
+            return -1
     
     def clear_table(self,table):
         query=f"DELETE FROM {table};"
@@ -98,7 +100,10 @@ class DatabaseConnector:
         except:
             print(f"ERROR: Could Not Execute Query '{query}'")
 
-    #COMMANDS
+
+    ##########
+    #COMMANDS#
+    ##########
 
     #Retrieve ALL values
     def retrieve_values(self,table):
@@ -113,21 +118,119 @@ class DatabaseConnector:
             output.append(out)
         return output
     
+    def train_id_retriever(self,train_name):
+         query=f"SELECT tr.Trid FROM coach_infos as coi inner join trains as tr on coi.CiTrid=tr.Trid where tr.Trname='{train_name}';"
+         self.execute_query(query)
+         row=self.cursor.fetchone()
+         if(row==None):
+             print("ERROR: No Such Train")
+         else:
+            return row["Trid"]
+
+    
     #Check Ticket Availability in Coach
     def check_ticket_availability(self,train,coach):
         if(type(train)==str):
-            query=f"SELECT * FROM coach_infos as coi inner join trains as tr on coi.CiTrid=tr.Trid where CiConame='{coach}' and Trname='{train}';"
-        else:
-            query=f"SELECT * FROM coach_infos where CiConame='{coach}' and CiTrid={train};"
+            train=self.train_id_retriever(train)
+
+        query=f"SELECT * FROM coach_infos where CiConame='{coach}' and CiTrid={train};"
         self.execute_query(query=query)
         row=self.cursor.fetchone()
+        if(row==None):
+            return "No Such Coach"
         if(row['Cisize']<row['CiComaxsize']):
             return True
         else:
             return False
+        
+    #Create Ticket
+    def create_ticket(self,train,coach,custid,check_available=False):
+        if(type(train)==str):
+            train=self.train_id_retriever(train)
+        
+        if(check_available):
+            if(not self.check_ticket_availability(train,coach)):
+                print("Ticket Not Available")
+                return
+        
+        query=f"SELECT CiComaxsize from coach_infos where CiTrid={train} and CiConame='{coach}';"
+        self.execute_query(query)
+        row=self.cursor.fetchone()
+        maxsize=row["CiComaxsize"]
+
+        all_seats=[i for i in range(1,maxsize+1)]
+        
+        query=f"SELECT Tiseatnum FROM tickets where TiTrid={train} and TiConame='{coach}';"
+        self.execute_query(query)
+        rows=self.cursor.fetchall()
+        taken_seats=[]
+        for row in rows:
+            taken_seats.append(row["Tiseatnum"])
+        
+        available_seats=list(set(all_seats)-set(taken_seats))
+
+        if(len(available_seats)==0):
+            print("No Seats Available")
+            return -1
+
+        query=f"select sysdate();"
+        self.execute_query(query)
+        row=self.cursor.fetchone()
+        
+        bookingtime=row['sysdate()']
+        seatnum=available_seats[np.random.randint(0,len(available_seats))]
+        ticketid=np.random.randint(10000,100000)
+
+        self.insert_entry(table="tickets",entry=[ticketid,train,coach,custid,seatnum,bookingtime])
+
+    #Create Waiting
+    def create_waiting(self,train,coach,custid):
+        if(type(train)==str):
+            train=self.train_id_retriever(train)
+
+        query=f"select sysdate();"
+        self.execute_query(query)
+        row=self.cursor.fetchone()
+        
+        waittime=row['sysdate()']
+        waitid=np.random.randint(10000,100000)
+
+        self.insert_entry(table='waitings',entry=[waitid,waittime,custid,train,coach])
+
+    #Cancel Ticket
+    def cancel_ticket(self,custid,train,coach,autoupgrade=True):
+        if(type(train)==str):
+            train=self.train_id_retriever(train)
+
+        query=f"SELECT Tiseatnum from tickets where TiTrid={train} and TiConame='{coach}' and TiCuid={custid};"
+        self.execute_query(query)
+        row=self.cursor.fetchone()
+
+        seatnum=row['Tiseatnum']
+
+        query=f"DELETE FROM tickets where TiTrid={train} and TiConame='{coach}' and TiCuid={custid};"
+        self.execute_query(query)
+        
+        if(autoupgrade):
+            query=f"SELECT * FROM waitings where Watime=(select min(Watime) from waitings);"
+            self.execute_query(query=query)
+            row=self.cursor.fetchone()
+
+            query=f"select sysdate();"
+            self.execute_query(query)
+            timerow=self.cursor.fetchone()
+        
+            bookingtime=timerow['sysdate()']
+
+            self.insert_entry(table="tickets",entry=[row["Waid"],train,coach,row["WaCuid"],seatnum,bookingtime])
+
+            query=f"DELETE FROM waitings where Waid={row["Waid"]}"
+            self.execute_query(query=query)
+        
+        return
     
     def add_customer(self,info):
-        query=f"INSERT INTO customers VALUES ({info[0]},'{info[1]}',{info[2]},'{info[3]}')"
+        query=f"INSERT INTO customers VALUES ({info[0]},'{info[1]}',{info[2]},'{info[3]}');"
         self.execute_query(query=query)
         
 
@@ -136,6 +239,9 @@ if __name__=="__main__":
 
     connector=DatabaseConnector()
     connector.connect("trainmanagement")
-    connector.clear_table('customers')
-    connector.add_customer([1,'Tejeshwar',20,'M'])
-    print(connector.retrieve_values('customers'))
+
+    connector.clear_table('tickets')
+    connector.clear_table('waitings')
+    connector.create_ticket(train="Rajdhani Express",coach="A1",custid=1,check_available=True)
+    connector.create_waiting(train="Rajdhani Express",coach="A1",custid=2)
+    connector.cancel_ticket(1,"Rajdhani Express","A1")
