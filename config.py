@@ -7,6 +7,7 @@ class TABLE_SQL:
         self.columns_name = list(columns_dict.keys())
 
         self.constraints = constraints
+        self.fill_query = None
 
     def _create_self(self):
         query_segments = [f"CREATE TABLE {self.name}("]
@@ -32,6 +33,19 @@ class TABLE_SQL:
 
         create_query = ''.join(str(query) for query in query_segments)
         return create_query
+    
+    def _fill_self(self, col_data: tuple):
+        query_segments = [f"INSERT INTO {self.name} values"]
+        for idx, data in enumerate(col_data):
+            query_segments.append(f"{data}")
+            if(idx != len(col_data) - 1):
+                query_segments.append(",")
+            else:
+                query_segments.append(";")
+        self.fill_query = ''.join(str(query) for query in query_segments)
+
+    def _create_fill(self):
+        return self.fill_query
 
 class DATABASE_SQL:
     def __init__(self):
@@ -42,6 +56,7 @@ class DATABASE_SQL:
         self.password = 'pass@123'
 
         self.connection = None
+        self.cursor = None
 
     def database_setup(self, tables_list, triggers_list= []):
         self._connect()
@@ -79,6 +94,25 @@ class DATABASE_SQL:
         self.connection.commit()
         self._disconnect()
 
+    def database_fillup(self, tables_list):
+        self._connect()
+        self.cursor = self.connection.cursor()
+
+        self._set_database()
+        
+        try:
+            # Fill all tables
+            for table in tables_list:
+                self.cursor.execute(table._create_fill())
+
+            print("Tables Filled")
+        except:
+            print("Error in Filling Tables.")
+            exit(0)
+
+        self.connection.commit()
+        self._disconnect()
+
     def _connect(self):
         try:
             # Connect to MySQL server (without specifying DB)
@@ -100,6 +134,8 @@ class DATABASE_SQL:
         print(f"Database set to {self.name}")
 
     def _disconnect(self):
+        # End connection
+        self.cursor = None
         self.connection.close()
 
 
@@ -116,14 +152,38 @@ if(__name__ == "__main__"):
             "Stid": "AUTO_INCREMENT PRIMARY KEY",
         }
     )
+    station_table._fill_self(
+        (
+            (12, "New Delhi", "Delhi"),
+            (56, "Mumbai Central", "Mumbai"),
+            (89, "Howrah Junction", "Kolkata"),
+            (34, "Chennai Central", "Chennai"),
+            (71, "Bangalore City", "Bengaluru"),
+            (23, "Secunderabad Jn", "Hyderabad"),
+            (95, "Ahmedabad Jn", "Ahmedabad"),
+            (47, "Pune Junction", "Pune"),
+            (68, "Jaipur Junction", "Jaipur"),
+            (19, "Lucknow NR", "Lucknow"),
+            (82, "Kanpur Central", "Kanpur"),
+            (30, "Nagpur Junction", "Nagpur"),
+            (75, "Patna Junction", "Patna"),
+            (41, "Vadodara Jn", "Vadodara"),
+            (63, "Indore Junction", "Indore"),
+            (98, "Bhopal Junction", "Bhopal"),
+            (27, "Visakhapatnam", "Visakhapatnam"),
+            (50, "Allahabad Jn", "Prayagraj"),
+            (78, "Coimbatore Jn", "Coimbatore"),
+            (37, "Madurai Junction", "Madurai")
+        )
+    )
 
+    #print(station_table._create_fill())
 
     train_table = TABLE_SQL(
         "Trains",
         columns_dict= {
             "Trid": "INT(5)",
             "Trname": "VARCHAR(20)",
-            "Trcoach": "VARCHAR(20)",
             "Trstatus": r"ENUM('Departed','Stationed','Incoming')"
         },
         constraints= {
@@ -179,7 +239,8 @@ if(__name__ == "__main__"):
             "CiTrid": "INT(5)",
             "CiConame": "CHAR(5)",
             "Cisize": "INT(2)",
-            "CiComaxsize": "INT(5)"
+            "CiComaxsize": "INT(5)",
+            "Cioversize": "INT(2)"
         },
         constraints= {
             "pk_TrCo": "PRIMARY KEY(CiTrid, CiConame)",
@@ -191,10 +252,17 @@ if(__name__ == "__main__"):
     ticket_table = TABLE_SQL(
         "Tickets",
         columns_dict= {
-
+            "Tiid": "CHAR(5)",
+            "TiTrid": "INT(5)",
+            "TiConame": "CHAR(5)",
+            "TiCuid": "INT(5)",
+            "Tiseatnum": "INT(3)",
+            "Tibooking": "DATETIME"
         },
         constraints= {
-
+            "Tiid": "PRIMARY KEY",
+            "fk_TiTrCo": "FOREIGN KEY(TiTrid, TiConame) REFERENCES Coach_infos(CiTrid, CiConame)",
+            "fk_TiCuid": "FOREIGN KEY(TiCuid) REFERENCES Customers(Cuid)",
         }
     )
 
@@ -202,10 +270,16 @@ if(__name__ == "__main__"):
         "Waitings",
         columns_dict= {
             "Waid": "INT(5)",
-            "Waname": "VARCHAR(20)",
+            "Watime": "DATETIME",
+            "WaCuid": "INT(5)",
+            "WaTrid": "INT(5)",
+            "WaConame": "CHAR(5)",
+            "Wapref": "CHAR(5)"
         },
         constraints= {
             "Waid": "AUTO_INCREMENT PRIMARY KEY",
+            "fk_WaCuid": "FOREIGN KEY(WaCuid) REFERENCES Customers(Cuid)",
+            "fk_WaTrCo": "FOREIGN KEY(WaTrid, WaConame) REFERENCES Coach_infos(CiTrid, CiConame)"
         }
     )
 
@@ -213,14 +287,19 @@ if(__name__ == "__main__"):
         "Cancelletations",
         columns_dict= {
             "Caid": "INT(5)",
-            "Caname": "VARCHAR(20)",
+            "CaCuid": "INT(5)",
+            "CaTrid": "INT(5)",
+            "CaConame": "CHAR(5)",
+            "Catime": "DATETIME"
         },
         constraints= {
             "Caid": "AUTO_INCREMENT PRIMARY KEY",
+            "fk_CaCuid": "FOREIGN KEY(CaCuid) REFERENCES Customers(Cuid)",
+            "fk_CaTrCo": "FOREIGN KEY(CaTrid, CaConame) REFERENCES Coach_infos(CiTrid, CiConame)"
         }
     )
 
-    # print(coach_info_table._create_self())
+    #print(coach_info_table._create_self())
 
     TABLES_table = [
         station_table,
@@ -229,10 +308,14 @@ if(__name__ == "__main__"):
         schedule_table,
         coach_table,
         coach_info_table,
-        #waiting_table,
-        #cancellation_table
+        waiting_table,
+        cancellation_table
     ]
 
+    FILL_table = [
+        station_table
+    ]
 
     db_interface = DATABASE_SQL()
     db_interface.database_setup(tables_list= TABLES_table)
+    db_interface.database_fillup(tables_list= FILL_table)
