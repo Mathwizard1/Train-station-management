@@ -250,7 +250,6 @@ if __name__=="__main__":
 
     connector.clear_table('tickets')
     connector.clear_table('waitings')
-    connector.add_customer([3,"Tejeshwar",20,'M'])
     connector.create_ticket(train="Rajdhani Express",coach="A1",custid=1,check_available=True)
     connector.create_waiting(train="Rajdhani Express",coach="A1",custid=2)
     connector.cancel_ticket(1,"Rajdhani Express","A1")
