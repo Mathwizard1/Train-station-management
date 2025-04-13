@@ -23,9 +23,10 @@ class TABLE_SQL:
             constraint = ""
 
         # Table constraints
-        for constraint in self.constraints:
+        for idx,constraint in enumerate(self.constraints):
             if(constraint not in self.columns_name):
-                query_segments.append(f"CONSTRAINT {constraint} {self.constraints[constraint]},")
+                query_segments.append(",")
+                query_segments.append(f"CONSTRAINT {constraint} {self.constraints[constraint]}")
 
         query_segments.append(");")
 
@@ -52,18 +53,30 @@ class DATABASE_SQL:
 
         self._set_database()
 
-        # Create all other objects
-        for table in tables_list:
-            self.cursor.execute(table._create_self())
+        try:
+            # Create all other objects
+            for table in tables_list:
+                self.cursor.execute(table._create_self())
 
-        for trigger in triggers_list:
-            self.cursor.execute(trigger._create_self())
+            print("Tables Initialized")
+        except:
+            print("Error in Initialization Table.")
+            exit(0)
 
-        print("Database Initialized")
+        try:
+            # Create all other objects
+            for trigger in triggers_list:
+                self.cursor.execute(trigger._create_self())
+
+            print("Triggers Initialized")
+        except:
+            print("Error in Initialization Trigger.")
+            exit(0)
+
+        print("database Initialised.")
 
         # End connection
         self.connection.commit()
-
         self._disconnect()
 
     def _connect(self):
@@ -92,11 +105,12 @@ class DATABASE_SQL:
 
 if(__name__ == "__main__"):
 
-    student_table = TABLE_SQL(
-        "Students",
+    station_table = TABLE_SQL(
+        "Stations",
         columns_dict= {
             "Stid": "INT(5)",
             "Stname": "VARCHAR(20)",
+            "Stcity": "VARCHAR(20)"
         },
         constraints= {
             "Stid": "AUTO_INCREMENT PRIMARY KEY",
@@ -109,6 +123,7 @@ if(__name__ == "__main__"):
         columns_dict= {
             "Trid": "INT(5)",
             "Trname": "VARCHAR(20)",
+            "Trcoach": "VARCHAR(20)",
             "Trstatus": r"ENUM('Departed','Stationed','Incoming')"
         },
         constraints= {
@@ -116,23 +131,106 @@ if(__name__ == "__main__"):
         }
     )
 
-    station_table = TABLE_SQL(
-        "Stations",
+    customer_table = TABLE_SQL(
+        "Customers",
         columns_dict= {
-            "Sid": "INT(5)",
-            "Sname": "VARCHAR(20)",
+            "Cuid": "INT(5)",
+            "Cuname": "VARCHAR(20)",
+            "Cuage": "INT(3)",
+            "Cugender": "CHAR(1)"   
         },
         constraints= {
-            "Sid": "AUTO_INCREMENT PRIMARY KEY",
+            "Cuid": "AUTO_INCREMENT PRIMARY KEY",
         }
     )
 
-    #print(station_table._create_self())
+    schedule_table = TABLE_SQL(
+        "Schedules",
+        columns_dict= {
+            "Shid": "INT(5)",
+            "ShTrid": "INT(5)",
+            "SharvStid": "INT(5)",
+            "Sharvtime": "DATETIME",
+            "ShdepStid": "INT(5)",
+            "Shdeptime": "DATETIME",
+        },
+        constraints= {
+            "Shid": "AUTO_INCREMENT PRIMARY KEY",
+            "fk_ShTrid": "FOREIGN KEY(ShTrid) REFERENCES Trains(Trid)",
+            "fk_SharvStid": "FOREIGN KEY(SharvStid) REFERENCES Stations(Stid)",
+            "fk_ShdepStid": "FOREIGN KEY(ShdepStid) REFERENCES Stations(Stid)"
+        }
+    )
+
+    coach_table = TABLE_SQL(
+        "Coachs",
+        columns_dict= {
+            "Coname": "CHAR(5)",
+            "Comaxsize": "INT(5)"
+        },
+        constraints= {
+            "Coname": "PRIMARY KEY",
+        }
+    )
+
+    coach_info_table = TABLE_SQL(
+        "Coach_infos",
+        columns_dict= {
+            "CiTrid": "INT(5)",
+            "CiConame": "CHAR(5)",
+            "Cisize": "INT(2)",
+            "CiComaxsize": "INT(5)"
+        },
+        constraints= {
+            "pk_TrCo": "PRIMARY KEY(CiTrid, CiConame)",
+            "fk_CiTrid": "FOREIGN KEY(CiTrid) REFERENCES Trains(Trid)",
+            "fk_CiConame": "FOREIGN KEY(CiConame) REFERENCES Coachs(Coname)"
+        }
+    )
+
+    ticket_table = TABLE_SQL(
+        "Tickets",
+        columns_dict= {
+
+        },
+        constraints= {
+
+        }
+    )
+
+    waiting_table = TABLE_SQL(
+        "Waitings",
+        columns_dict= {
+            "Waid": "INT(5)",
+            "Waname": "VARCHAR(20)",
+        },
+        constraints= {
+            "Waid": "AUTO_INCREMENT PRIMARY KEY",
+        }
+    )
+
+    cancellation_table = TABLE_SQL(
+        "Cancelletations",
+        columns_dict= {
+            "Caid": "INT(5)",
+            "Caname": "VARCHAR(20)",
+        },
+        constraints= {
+            "Caid": "AUTO_INCREMENT PRIMARY KEY",
+        }
+    )
+
+    # print(coach_info_table._create_self())
 
     TABLES_table = [
-        student_table,
-        train_table,
         station_table,
+        train_table,
+        customer_table,
+        schedule_table,
+        coach_table,
+        coach_info_table,
+        #waiting_table,
+        #cancellation_table
     ]
 
 
