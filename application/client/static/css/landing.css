@@ -16,9 +16,11 @@ body {
 }
 
 .scrolling-text-container {
+    margin: auto;
     overflow: hidden;
     white-space: nowrap;
-    width: 100%; /* Make it full width */
+    border-radius: 25px;
+    width: 80%; /* width */
     background-color: rgba(63, 113, 219, 0.831);
     padding: 10px 0;
     box-sizing: border-box; /* Ensure padding doesn't affect width */
