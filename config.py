@@ -35,7 +35,7 @@ class TABLE_SQL:
         return create_query
     
     def _fill_self(self, col_data: tuple):
-        query_segments = [f"INSERT INTO {self.name} values"]
+        query_segments = [f"INSERT INTO {self.name} VALUES"]
         for idx, data in enumerate(col_data):
             query_segments.append(f"{data}")
             if(idx != len(col_data) - 1):
@@ -152,32 +152,31 @@ if(__name__ == "__main__"):
             "Stid": "AUTO_INCREMENT PRIMARY KEY",
         }
     )
-    station_table._fill_self(
-        (
-            (12, "New Delhi", "Delhi"),
-            (56, "Mumbai Central", "Mumbai"),
-            (89, "Howrah Junction", "Kolkata"),
-            (34, "Chennai Central", "Chennai"),
-            (71, "Bangalore City", "Bengaluru"),
-            (23, "Secunderabad Jn", "Hyderabad"),
-            (95, "Ahmedabad Jn", "Ahmedabad"),
-            (47, "Pune Junction", "Pune"),
-            (68, "Jaipur Junction", "Jaipur"),
-            (19, "Lucknow NR", "Lucknow"),
-            (82, "Kanpur Central", "Kanpur"),
-            (30, "Nagpur Junction", "Nagpur"),
-            (75, "Patna Junction", "Patna"),
-            (41, "Vadodara Jn", "Vadodara"),
-            (63, "Indore Junction", "Indore"),
-            (98, "Bhopal Junction", "Bhopal"),
-            (27, "Visakhapatnam", "Visakhapatnam"),
-            (50, "Allahabad Jn", "Prayagraj"),
-            (78, "Coimbatore Jn", "Coimbatore"),
-            (37, "Madurai Junction", "Madurai")
-        )
+
+    station_data = (
+        (12, "New Delhi", "Delhi"),
+        (56, "Mumbai Central", "Mumbai"),
+        (89, "Howrah Junction", "Kolkata"),
+        (34, "Chennai Central", "Chennai"),
+        (71, "Bangalore City", "Bengaluru"),
+        (23, "Secunderabad Jn", "Hyderabad"),
+        (95, "Ahmedabad Jn", "Ahmedabad"),
+        (47, "Pune Junction", "Pune"),
+        (68, "Jaipur Junction", "Jaipur"),
+        (19, "Lucknow NR", "Lucknow"),
+        (82, "Kanpur Central", "Kanpur"),
+        (30, "Nagpur Junction", "Nagpur"),
+        (75, "Patna Junction", "Patna"),
+        (41, "Vadodara Jn", "Vadodara"),
+        (63, "Indore Junction", "Indore"),
+        (98, "Bhopal Junction", "Bhopal"),
+        (27, "Visakhapatnam", "Visakhapatnam"),
+        (50, "Allahabad Jn", "Prayagraj"),
+        (78, "Coimbatore Jn", "Coimbatore"),
+        (37, "Madurai Junction", "Madurai")
     )
 
-    #print(station_table._create_fill())
+    station_table._fill_self(station_data)
 
     train_table = TABLE_SQL(
         "Trains",
@@ -191,6 +190,31 @@ if(__name__ == "__main__"):
         }
     )
 
+    train_data = (
+        (123, "Rajdhani Express", "Departed"),
+        (456, "Shatabdi Exp", "Stationed"),
+        (789, "Duronto Express", "Incoming"),
+        (234, "Kerala Express", "Departed"),
+        (567, "Tamil Nadu Exp", "Stationed"),
+        (890, "Karnataka Exp", "Incoming"),
+        (345, "Andhra Pradesh", "Departed"),
+        (678, "Gujarat Mail", "Stationed"),
+        (901, "Mumbai Rajdhani", "Incoming"),
+        (457, "Howrah Mail", "Departed"),
+        (780, "Coromandel Exp", "Stationed"),
+        (129, "Ganga Sagar Exp", "Incoming"),
+        (561, "Godavari Exp", "Departed"),
+        (893, "Telangana Exp", "Stationed"),
+        (235, "Himachal Exp", "Incoming"),
+        (679, "Deccan Queen", "Departed"),
+        (902, "Konark Express", "Stationed"),
+        (346, "Udyan Express", "Incoming"),
+        (781, "Falaknuma Exp", "Departed"),
+        (124, "Brindavan Exp", "Stationed")
+    )
+
+    train_table._fill_self(train_data)
+
     customer_table = TABLE_SQL(
         "Customers",
         columns_dict= {
@@ -202,6 +226,12 @@ if(__name__ == "__main__"):
         constraints= {
             "Cuid": "AUTO_INCREMENT PRIMARY KEY",
         }
+    )
+    customer_table._fill_self(
+        (
+            (1, "admin", 18, "U"),
+            (2, "Omesh", 18, "G")
+        )
     )
 
     schedule_table = TABLE_SQL(
@@ -222,6 +252,14 @@ if(__name__ == "__main__"):
         }
     )
 
+    schedule_data = (
+        (),
+        ()
+    )
+
+    schedule_table._fill_self(schedule_data)
+
+
     coach_table = TABLE_SQL(
         "Coachs",
         columns_dict= {
@@ -232,6 +270,20 @@ if(__name__ == "__main__"):
             "Coname": "PRIMARY KEY",
         }
     )
+
+    coach_data = (
+        ("SLR", 80),  # Seating cum Luggage Rake
+        ("GS", 90),   # General Second Class
+        ("A1", 24),   # AC First Class
+        ("A2", 48),   # AC Two Tier
+        ("A3", 64),   # AC Three Tier
+        ("B1", 72),   # AC Three Tier (older type)
+        ("S1", 72),   # Sleeper Class
+        ("PC", 80),   # Pantry Car
+        ("HCPV", 26), # High Capacity Parcel Van
+    )
+
+    coach_table._fill_self(coach_data)
 
     coach_info_table = TABLE_SQL(
         "Coach_infos",
@@ -300,6 +352,7 @@ if(__name__ == "__main__"):
     )
 
     #print(coach_info_table._create_self())
+    #print(customer_table._create_fill())
 
     TABLES_table = [
         station_table,
@@ -313,7 +366,15 @@ if(__name__ == "__main__"):
     ]
 
     FILL_table = [
-        station_table
+        station_table,
+        train_table,
+        
+        customer_table,
+
+        coach_table,
+
+
+
     ]
 
     db_interface = DATABASE_SQL()
