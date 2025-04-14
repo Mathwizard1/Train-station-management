@@ -108,6 +108,15 @@ class DatabaseConnector:
     #COMMANDS#
     ##########
 
+    # gets row count
+    def get_row_count(self, table):
+        query = f"SELECT COUNT(*) FROM {table};"
+        flag = self.execute_query(query=query, commit= False)
+        if(flag):
+            return -1
+        row_count = self.cursor.fetchone()
+        return row_count['COUNT(*)']
+
     #Retrieve ALL values
     def retrieve_values(self,table):
         query=f"SELECT * FROM {table};"

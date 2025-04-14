@@ -226,8 +226,8 @@ if(__name__ == "__main__"):
         },
         constraints= {
             "Cuid": "AUTO_INCREMENT PRIMARY KEY",
-            "Cuname": "UNIQUE",
-            "Cupassword": "UNIQUE"
+            # "Cuname": "UNIQUE",
+            # "Cupassword": "UNIQUE"
         }
     )
     customer_table._fill_self(
@@ -386,6 +386,7 @@ if(__name__ == "__main__"):
         customer_table,
         schedule_table,
         coach_table,
+        coach_info_table
     ]
 
     db_interface = DATABASE_SQL()

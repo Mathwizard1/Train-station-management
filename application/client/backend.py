@@ -11,7 +11,9 @@ app.secret_key = secrets.token_hex(4)
 def get_db():
     if 'db' not in g:
         try:
-            g.db = DatabaseConnector()
+            dbconn = DatabaseConnector()
+            dbconn.connect("TrainManagement")
+            g.db = dbconn
         except Exception as e:
             print(f"Error connecting to database: {e}")
             raise
@@ -47,7 +49,7 @@ def handle_login():
 @app.route('/login/<login_mode>', methods=['GET', 'POST'])
 def login(login_mode):
     dbconn = get_db()
-    flag = dbconn.connect("TrainManagement")
+    flag = dbconn.set_database("TrainManagement")
 
     if(flag):
         return render_template('login.html', login_mode= login_mode, error_message="Failed to connect Dataserver")
@@ -63,19 +65,18 @@ def login(login_mode):
             if (username == '' or password == ''):
                 return render_template('login.html', login_mode= login_mode, error_message="Empty credentials")
 
-            user_datas = dbconn.retrieve_values('Customers')#, 'Cuid, Cuname, Cupassword')
-            print(user_datas)
+            user_datas = dbconn.retrieve_values('Customers', 'Cuid, Cuname, Cupassword')
 
             user_found = False
             for user_data in user_datas:
-                if(username == user_data[1] and password == user_data[4]):
+                if(username == user_data[1] and password == user_data[2]):
 
                     user_found = True
                     session['user_id'] = user_data[0]
                     session['username'] = user_data[1]
 
             if user_found:
-                return redirect(url_for('home'))
+                return redirect(url_for('schedule'))
             return render_template('login.html', login_mode= login_mode, error_message="Invalid credentials")
     elif(login_mode == "signup"):
         if request.method == 'POST':
@@ -90,15 +91,44 @@ def login(login_mode):
                 return render_template('login.html', login_mode= login_mode, error_message="Invalid credentials")
 
             if password == repassword:
-                # TODO sql check
+                dbconn = get_db()
+                current_idx = dbconn.get_row_count('Customers')
 
-                session['user_id'] = username
+                if(current_idx < 0):
+                    return render_template('login.html', login_mode= login_mode, error_message="Server Error")
+
+                flag = dbconn.insert_entry('Customers',
+                    (current_idx + 1, username, age, gender, password)            
+                )
+
+                if(flag):
+                    return render_template('login.html', login_mode= login_mode, error_message="Server Error")
+
+                session['user_id'] = current_idx + 1
                 session['username'] = username
 
-                return redirect(url_for('home'))
+                return redirect(url_for('schedule'))
             else:
                 return render_template('login.html', login_mode= login_mode, error_message="Password Mismatch")
     return render_template('login.html', login_mode= login_mode)
+
+@app.route('/schedule', methods= ['GET', 'POST'])
+def schedule():
+    if(request.method == 'POST'):
+        pass
+
+    dbconn = get_db()
+    flag = dbconn.retrieve_schedules()
+
+    if(flag == True):
+        print("Fucked")
+
+    schedule = flag
+    print(schedule)
+
+    return render_template('schedule.html',
+                           schedule_table= schedule)
+
 
 @app.route('/home', methods= ['GET', 'POST'])
 def home():
