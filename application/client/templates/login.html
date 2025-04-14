@@ -3,25 +3,105 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login Page</title>
+    <title>Train Booking</title>
 
     <!--Add this line for bootstrap-->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/icon.png') }}">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
 </head>
-<body>
+<body class="d-flex flex-column align-items-center justify-content-center vh-100"></body>
     <!--Add this line for bootstrap-->
     <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
 
-    <h1>Login</h1>
-    {% if error %}
-        <p style="color:red;">{{ error }}</p>
+    <div class="full-bg-image"></div>
+
+    {% if(login_mode== 'signin') %}
+        <div class="container-login">
+            <h3 class="login-header">SignIn</h3>
+            <form method="POST">
+                <div class="form-group row">
+                    <label for="username" class="col-sm-2 col-form-label">Username</label>
+                    <div class="col-sm-9">
+                        <input type="text" id="username" name="username" 
+                        class="form-control" placeholder="Enter your username">
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label for="password" class="col-sm-2 col-form-label">Password</label>
+                    <div class="col-sm-9">
+                        <input type="password" id="password" name="password" autocomplete="off"
+                        class="form-control" placeholder="Enter your password">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary">Submit</button>
+                {% if(error_message) %}
+                <div id="error-message" class="error-message">
+                    <span>{{error_message}}</span>
+                </div>
+                {% endif %}
+            </form>
+        </div>
+    {% elif(login_mode== 'signup')%}
+        <div class="container-login">
+            <h3 class="login-header">SignUp</h3>
+            <form method="POST">
+                <div class="form-group row">
+                    <label for="username" class="col-sm-2 col-form-label">Username</label>
+                    <div class="col-sm-9">
+                        <input type="text" id="username" name="username" 
+                        class="form-control" placeholder="Enter your username">
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label for="age" class="col-sm-2 col-form-label">Age</label>
+                    <div class="col-sm-9">
+                        <input type="number" id="age" name="age" min="1"
+                        class="form-control">
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label class="col-sm-2 col-form-label">Gender</label>
+                    <div class="col-sm-9">
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="gender" id="male" value="M">
+                            <label class="form-check-label" for="male">Male</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="gender" id="female" value="F">
+                            <label class="form-check-label" for="female">Female</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input class="form-check-input" type="radio" name="gender" id="other" value="U">
+                            <label class="form-check-label" for="other">Other</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label for="password" class="col-sm-2 col-form-label">Password</label>
+                    <div class="col-sm-9">
+                        <input type="password" id="password" name="password" autocomplete="off"
+                        class="form-control" placeholder="Enter your password">
+                    </div>
+                </div>
+                <div class="form-group row">
+                    <label for="repassword" class="col-sm-2 col-form-label">Confirm</label>
+                    <div class="col-sm-9">
+                        <input type="password" id="repassword" name="repassword" autocomplete="off"
+                        class="form-control" placeholder="confirm your password">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary">Submit</button>
+                {% if(error_message) %}
+                <div id="error-message" class="error-message">
+                    <span>{{error_message}}</span>
+                </div>
+                {% endif %}
+            </form>
+        </div>
+    {% else %}
     {% endif %}
-    <form method="POST">
-        <label>Username:</label>
-        <input type="text" name="username" required><br><br>
-        <label>Password:</label>
-        <input type="password" name="password" required><br><br>
-        <button type="submit">Login</button>
-    </form>
 </body>
 </html>
