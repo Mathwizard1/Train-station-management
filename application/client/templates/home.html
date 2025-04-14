@@ -22,16 +22,7 @@
         <div class="row">
             <div class="col-md-4 left-panel">
                 <h4 class="mb-4">Book Tickets</h2>
-                <form method="POST" id="dynamic-form">
-                    {% for field in form_fields %}
-                        <div class="form-group">
-                            <label for="{{ field.name }}">{{ field.label }}</label>
-                            <input type="{{ field.type }}" name="{{ field.name }}" id="{{ field.name }}" 
-                            class="form-control" placeholder="Enter {{ field.label }}">
-                        </div>
-                    {% endfor %}
-                    <button type="submit" class="btn btn-primary mt-3">Submit</button>
-                </form>
+
             </div>
             <div class="col-md-6 right-panel">
                 <h4 class="mb-4">Train Table</h4>
@@ -40,7 +31,6 @@
                         <table class="table table-bordered table-striped" id="data-table">
                             <thead>
                                 <tr>
-                                    <th>Select</th>
                                     {% for header in table_headers %}
                                         <th>{{ header }}</th>
                                     {% endfor %}
@@ -51,16 +41,16 @@
                                     <tr {% if selected_row == loop.index %}class="selected-row"{% endif %}>
                                         <td>
                                             <div class="radio-table-group">
-                                                <input type="radio" name="selected_row" id="row_{{ loop.index }}" value="{{ loop.index }}"  
-                                                {% if selected_row == loop.index %} checked class="selected-row" {% endif %}
+                                                <input type="radio" name="selected_id" id="{{ row[0] }}" value="{{ row[0] }}"  
+                                                {% if selected_row == row[0] %} checked class="selected-row" {% endif %}
                                                 onchange="this.form.submit()">
-                                                <label for="row_{{ loop.index }}"></label>
+                                                <label for="{{ row[0] }}">{{ row[0] }}</label>
                                             </div>
                                         </td>
-                                        <div {% if selected_row == loop.index %} class="selected-row" {% endif %} ></div>
-                                        {% for header in table_headers %}
+                                        <div {% if selected_row == row[0] %} class="selected-row" {% endif %}>
+                                        {% for i in range(1, row_len) %}
                                             <td>
-                                                {{ header or '' }}
+                                                {{ row[i] or '' }}
                                             </td>
                                         {% endfor %}
                                         </div>

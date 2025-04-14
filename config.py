@@ -307,6 +307,14 @@ if(__name__ == "__main__"):
         }
     )
 
+    coach_info_data = (
+        (1, coach_data[0][0], 0, coach_data[0][1], 1),
+        (2, coach_data[1][0], 0, coach_data[1][1], 1),
+        (3, coach_data[2][0], 0, coach_data[2][1], 1),
+    )
+
+    coach_info_table._fill_self(coach_info_data)
+
     ticket_table = TABLE_SQL(
         "Tickets",
         columns_dict= {
