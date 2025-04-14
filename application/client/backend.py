@@ -49,9 +49,9 @@ def handle_login():
 @app.route('/login/<login_mode>', methods=['GET', 'POST'])
 def login(login_mode):
     dbconn = get_db()
-    flag = dbconn.set_database("TrainManagement")
+    dbconn.set_database("TrainManagement")
 
-    if(flag):
+    if(dbconn.errorflag):
         return render_template('login.html', login_mode= login_mode, error_message="Failed to connect Dataserver")
 
     if('user_id' in session):
@@ -97,11 +97,11 @@ def login(login_mode):
                 if(current_idx < 0):
                     return render_template('login.html', login_mode= login_mode, error_message="Server Error")
 
-                flag = dbconn.insert_entry('Customers',
+                dbconn.insert_entry('Customers',
                     (current_idx + 1, username, age, gender, password)            
                 )
 
-                if(flag):
+                if(dbconn.errorflag):
                     return render_template('login.html', login_mode= login_mode, error_message="Server Error")
 
                 session['user_id'] = current_idx + 1
@@ -114,21 +114,37 @@ def login(login_mode):
 
 @app.route('/schedule', methods= ['GET', 'POST'])
 def schedule():
+    filtering = None
+    a_selected = d_selected = "All"
+
     if(request.method == 'POST'):
-        pass
+        if('defaulter' in request.form):
+            filtering = None
+            a_selected = d_selected = "All"
+        elif('filter' in request.form):
+            filtering = True
+            a_selected = request.form['arv_select']
+            d_selected = request.form['dep_select']
 
     dbconn = get_db()
-    flag = dbconn.retrieve_schedules()
+    schedule, arv_stat, dep_stat = dbconn.retrieve_schedules()
 
-    if(flag == True):
+    if(dbconn.errorflag):
         return render_template('schedule.html',
                                error_message= "Server Not working")
 
-    schedule = flag
-    print(schedule)
+    #print(schedule)
+    if(filtering):
+        schedule, arv_stat, dep_stat = dbconn.retrieve_schedules()
+        print(a_selected)
+        print(d_selected)
 
     return render_template('schedule.html',
-                           schedule_table= schedule)
+                           schedule_table= schedule,
+                           arv_stat = arv_stat,
+                           dep_stat = dep_stat,
+                           a_selected= a_selected,
+                           d_selected = d_selected)
 
 
 @app.route('/home', methods= ['GET', 'POST'])

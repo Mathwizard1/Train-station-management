@@ -146,6 +146,9 @@ class DatabaseConnector:
         for data in stationdata:
             stationdict[data["Stid"]]=data["Stname"]
         
+        arv_stat = []
+        dep_stat = []
+
         for row in rows:
             row[1]=traindict[row[1]]
             row[2]=stationdict[row[2]]
@@ -153,9 +156,10 @@ class DatabaseConnector:
             row[4]=stationdict[row[4]]
             row[5]=row[5].strftime('%I:%M:%S %p %d/%m/%Y')
         
-        return rows
+            arv_stat.append(row[2])
+            dep_stat.append(row[4])
 
-        
+        return rows, arv_stat, dep_stat
     
     #Convert Train Name to Train ID
     def train_id_retriever(self,train_name):
