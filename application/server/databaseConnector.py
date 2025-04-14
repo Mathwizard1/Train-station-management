@@ -127,7 +127,7 @@ class DatabaseConnector:
 
         return output
     
-    def retrieve_schedules(self):
+    def retrieve_schedules(self,dept="",arr=""):
         rows=self.retrieve_values("schedules")
 
         query=f"SELECT Trid,Trname from trains;"
@@ -153,6 +153,13 @@ class DatabaseConnector:
             row[4]=stationdict[row[4]]
             row[5]=row[5].strftime('%I:%M:%S %p %d/%m/%Y')
         
+        if(dept!="" or arr!=""):
+            temprows=[]
+            for row in rows:
+                if(row[2]==arr or row[4]==dept):
+                    temprows.append(row)
+            rows=temprows 
+
         return rows
 
         
