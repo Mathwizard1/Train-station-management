@@ -1,0 +1,21 @@
+.left-panel {
+    padding: 20px;
+    border-right: 1px solid black;
+}
+.right-panel {
+    padding: 20px;
+}
+.table-container {
+    overflow-x: auto;
+    max-width: 100%;
+}
+
+.radio-table-group {
+    margin-bottom: 10px;
+}
+.selected-row {
+    text-decoration: underline;
+}
+.selected-radio {
+     border: 2px solid #007bff;
+}

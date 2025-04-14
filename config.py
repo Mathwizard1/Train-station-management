@@ -221,16 +221,18 @@ if(__name__ == "__main__"):
             "Cuid": "INT(5)",
             "Cuname": "VARCHAR(20)",
             "Cuage": "INT(3)",
-            "Cugender": "CHAR(1)"   
+            "Cugender": "CHAR(1)",  
+            "Cupassword": "VARCHAR(20)" 
         },
         constraints= {
             "Cuid": "AUTO_INCREMENT PRIMARY KEY",
+            "Cupassword": "UNIQUE"
         }
     )
     customer_table._fill_self(
         (
-            (1, "admin", 18, "U"),
-            (2, "Omesh", 18, "G")
+            (1, "admin", 18, "U", "Password1"),
+            (2, "Omesh", 18, "G", "Password2")
         )
     )
 
@@ -284,6 +286,7 @@ if(__name__ == "__main__"):
         ("S1", 72),   # Sleeper Class
         ("PC", 80),   # Pantry Car
         ("HCPV", 26), # High Capacity Parcel Van
+        ("ROY", 1)    # Royal car
     )
 
     coach_table._fill_self(coach_data)
@@ -363,19 +366,17 @@ if(__name__ == "__main__"):
         schedule_table,
         coach_table,
         coach_info_table,
+        ticket_table,
         waiting_table,
         cancellation_table,
-        ticket_table,
     ]
 
     FILL_table = [
         station_table,
         train_table,
-        
         customer_table,
-
-        coach_table,
         schedule_table,
+        coach_table,
     ]
 
     db_interface = DATABASE_SQL()
