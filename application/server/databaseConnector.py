@@ -118,6 +118,36 @@ class DatabaseConnector:
             output.append(out)
         return output
     
+    def retrieve_schedules(self):
+        rows=self.retrieve_values("schedules")
+
+        query=f"SELECT Trid,Trname from trains;"
+        self.execute_query(query)
+        traindata=self.cursor.fetchall()
+
+        traindict={}
+        for data in traindata:
+            traindict[data["Trid"]]=data["Trname"]
+        
+        query=f"SELECT Stid,Stname from stations;"
+        self.execute_query(query)
+        stationdata=self.cursor.fetchall()
+
+        stationdict={}
+        for data in stationdata:
+            stationdict[data["Stid"]]=data["Stname"]
+        
+        for row in rows:
+            row[1]=traindict[row[1]]
+            row[2]=stationdict[row[2]]
+            row[3]=row[3].strftime('%I:%M:%S %p %d/%m/%Y')
+            row[4]=stationdict[row[4]]
+            row[5]=row[5].strftime('%I:%M:%S %p %d/%m/%Y')
+        
+        return rows
+
+        
+    
     #Convert Train Name to Train ID
     def train_id_retriever(self,train_name):
          query=f"SELECT tr.Trid FROM coach_infos as coi inner join trains as tr on coi.CiTrid=tr.Trid where tr.Trname='{train_name}';"
@@ -248,8 +278,4 @@ if __name__=="__main__":
     connector=DatabaseConnector()
     connector.connect("trainmanagement")
 
-    connector.clear_table('tickets')
-    connector.clear_table('waitings')
-    connector.create_ticket(train="Rajdhani Express",coach="A1",custid=1,check_available=True)
-    connector.create_waiting(train="Rajdhani Express",coach="A1",custid=2)
-    connector.cancel_ticket(1,"Rajdhani Express","A1")
+    connector.retrieve_schedules()
