@@ -386,7 +386,7 @@ if(__name__ == "__main__"):
         customer_table,
         schedule_table,
         coach_table,
-        coach_info_table
+        #coach_info_table
     ]
 
     db_interface = DATABASE_SQL()
