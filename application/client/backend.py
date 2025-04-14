@@ -1,8 +1,12 @@
 from flask import Flask, render_template, request, redirect, url_for
 from application.server.databaseConnector import DatabaseConnector
 from flask import session, g
+from flask import jsonify
 
 import secrets
+
+# TODO remove this i
+i = 0
 
 app = Flask(__name__)
 app.secret_key = secrets.token_hex(4)
@@ -25,15 +29,14 @@ def close_db(e=None):
     db = g.pop('db', None)
     if db is not None:
         try:
-            # db.close()
-            pass
+            db.close()
         except Exception as e:
             print(f"Error closing database connection: {e}")
 
 @app.route('/')
 def landing():
     sentences = (
-        "Welcome to Ticket Booking. Book Tickets with one click.",
+        "Welcome to Train Booking. Book Tickets with one click.",
         "Fast and Easy. No Hassle.",
         "Tell us your destination and let's go!",
         "Mumbai Delhi Kolkata Chennai Bangalore Hyderabad Srinagar Sikkim.",
@@ -171,11 +174,13 @@ def ticket():
                 elif('submit' in request.form and 
                     'coach_selections' in request.form and request.form['coach_selections'] != ""):
                     coach = request.form['coach_selections']
+                    session['coach'] = coach
 
                     #TODO Ticket system and waiting
                     print(coach)
+                    session['ticket_booked'] = 'waiting'
+                    return redirect(url_for('waiting'))
 
-                    session['coach'] = coach
                     session['ticket_booked'] = 'booked'
             elif('cancel' in request.form):
                 # dbconn.cancel_ticket(session['user_id'], session['train'], session['coach'])
@@ -186,6 +191,9 @@ def ticket():
                 session['ticket_booked'] = 'cancelled'
                 return render_template('ticket.html', ticket_booked= session['ticket_booked'])
 
+        if(session['ticket_booked'] == 'cancelled'):
+            return render_template('ticket.html', ticket_booked= session['ticket_booked'])
+        
         train_data, _, _ = dbconn.retrieve_schedules(where=f"WHERE Shid={session['schedule_id']}")
         if(dbconn.errorflag):
             return render_template('ticket.html', error_message="SERVER ERROR")
@@ -193,6 +201,7 @@ def ticket():
         train_data = train_data[0]
         session['train'] = train_data[1]
 
+        # TODO use train id and get coaches list
         train_id = dbconn.train_id_retriever(train_data[1])
         customer_data = dbconn.get_customer_data(session['user_id'])
 
@@ -211,7 +220,7 @@ def ticket():
 
             'coachs': coachs,
 
-            'train_name': session['train'],
+            'train_name': train_data[1],
             'arv_station': train_data[2],
             'arv_time': train_data[3],
             'dep_station': train_data[4],
@@ -221,7 +230,10 @@ def ticket():
         }
 
         if(session['ticket_booked'] == 'booked'):
+            param_dict.pop('coachs', None)
             param_dict['coach'] = session['coach']
+
+            # TODO put actual seats and id
             param_dict['ticket_id'] = 12121
             param_dict['seat'] = [1,2,3]
 
@@ -232,6 +244,61 @@ def ticket():
         return redirect(url_for('schedule'))
     return redirect(url_for('logout'))
 
+@app.route('/check_Waiting_List')
+def check_Waiting_List():
+    # TODO sql waiting list update
+    print("checking")
+
+    global i
+    if i < 2:
+        i += 1
+        return jsonify({"status": "waiting"})
+    else:
+        session['ticket_booked'] = 'booked'
+        return jsonify({"status": "changed", "redirect_url": url_for('ticket')})
+
+
+@app.route('/waiting', methods= ['GET', 'POST'])
+def waiting():
+    dbconn = get_db()
+
+    if('schedule_id' in session and 'coach' in session and 'user_id' in session):
+        if(request.method == "POST" and 'cancel' in request.form):
+            # dbconn.cancel_ticket(session['user_id'], session['train'], session['coach'])
+            session.pop('train', None)
+            session.pop('coach', None)
+
+            session['ticket_booked'] = 'cancelled'
+            return redirect(url_for('ticket'))
+
+        train_data, _, _ = dbconn.retrieve_schedules(where=f"WHERE Shid={session['schedule_id']}")
+        if(dbconn.errorflag):
+            return render_template('ticket.html', error_message="SERVER ERROR")
+
+        train_data = train_data[0]
+        customer_data = dbconn.get_customer_data(session['user_id'])
+
+        if(dbconn.errorflag):
+            return render_template('ticket.html', error_message="SERVER ERROR")
+
+        param_dict = {
+            'name': customer_data['Cuname'],
+            'age': customer_data['Cuage'],
+            'gender': customer_data['Cugender'],
+
+            'coach': session['coach'],
+
+            'train_name': train_data[1],
+            'arv_station': train_data[2],
+            'arv_time': train_data[3],
+            'dep_station': train_data[4],
+            'dep_time': train_data[5],
+
+            'ticket_booked': session['ticket_booked']
+        }
+
+        return render_template('ticket.html', **param_dict)
+    return redirect(url_for('ticket'))
 
 # For reset session
 @app.route('/logout')
