@@ -50,7 +50,7 @@
         {% if error_message %}
             <h1 class="error-message">{{ error_message }}</h1>
         {% else %}
-        <!--form action="/your-form-action" method="post">
+        <form action="/your-form-action" method="post">
             <div class="row mt-4">
                 <div class="col-12">
                     <div class="table-container">
@@ -58,20 +58,22 @@
                             <thead>
                                 <tr>
                                     <th>Select</th>
-                                    <th>Name</th>
-                                    <th>Category</th>
-                                    <th>Item</th>
-                                    <th>Value</th>
+                                    <th>Train</th>
+                                    <th>Arv. Station</th>
+                                    <th>Arv. Time</th>
+                                    <th>Dep. Station</th>
+                                    <th>Dep. Time</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for item in data %}
+                                {% for data in schedule_table %}
                                     <tr>
-                                        <td><input type="radio" name="selected_row" value="{{ item.value }}"></td>
-                                        <td>{{ item.name }}</td>
-                                        <td>{{ item.category }}</td>
-                                        <td>{{ item.item }}</td>
-                                        <td>{{ item.value }}</td>
+                                        <td><input type="radio" name="selected_row" value="{{ data[0] }}">{{data[0]}}</td>
+                                        <td>{{ data[1] }}</td>
+                                        <td>{{ data[2] }}</td>
+                                        <td>{{ data[3] }}</td>
+                                        <td>{{ data[4] }}</td>
+                                        <td>{{ data[5] }}</td>
                                     </tr>
                                 {% endfor %}
                             </tbody>
@@ -79,8 +81,8 @@
                     </div>
                 </div>
             </div>
-            <button type="submit" class="btn btn-primary mt-3">Submit Selection</button>  {# Add a submit button for the form #}
-        </form-->
+            <button type="submit" name="submit" class="btn btn-primary mt-3">Submit Selection</button>
+        </form>
         {% endif %}
     </div>
 </body>

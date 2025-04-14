@@ -125,6 +125,8 @@ def schedule():
             filtering = True
             a_selected = request.form['arv_select']
             d_selected = request.form['dep_select']
+        elif('submit' in request.form):
+            pass
 
     dbconn = get_db()
     schedule, arv_stat, dep_stat = dbconn.retrieve_schedules()
@@ -133,11 +135,11 @@ def schedule():
         return render_template('schedule.html',
                                error_message= "Server Not working")
 
-    #print(schedule)
     if(filtering):
-        schedule, arv_stat, dep_stat = dbconn.retrieve_schedules()
+        schedule, arv_stat, dep_stat = dbconn.retrieve_schedules(d_selected, a_selected)
         print(a_selected)
         print(d_selected)
+    print(schedule)
 
     return render_template('schedule.html',
                            schedule_table= schedule,
