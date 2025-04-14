@@ -156,7 +156,10 @@ class DatabaseConnector:
         if(dept!="" or arr!=""):
             temprows=[]
             for row in rows:
-                if(row[2]==arr or row[4]==dept):
+                if(dept!="" and arr!=""):
+                    if(row[2]==arr and row[4]==dept):
+                        temprows.append(row)
+                elif(row[2]==arr or row[4]==dept):
                     temprows.append(row)
             rows=temprows 
 
