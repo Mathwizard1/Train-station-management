@@ -374,11 +374,9 @@ if(__name__ == "__main__"):
     FILL_table = [
         station_table,
         train_table,
-        
         customer_table,
         schedule_table,
         coach_table,
-        schedule_table,
     ]
 
     db_interface = DATABASE_SQL()
