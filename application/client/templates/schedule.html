@@ -50,7 +50,7 @@
         {% if error_message %}
             <h1 class="error-message">{{ error_message }}</h1>
         {% else %}
-        <form action="/your-form-action" method="post">
+        <form method="POST">
             <div class="row mt-4">
                 <div class="col-12">
                     <div class="table-container">
@@ -81,7 +81,7 @@
                     </div>
                 </div>
             </div>
-            <button type="submit" name="submit" class="btn btn-primary mt-3">Submit Selection</button>
+            <button type="submit" name="submit" class="btn btn-primary m-3">Book Seats</button>
         </form>
         {% endif %}
     </div>

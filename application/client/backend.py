@@ -55,7 +55,7 @@ def login(login_mode):
         return render_template('login.html', login_mode= login_mode, error_message="Failed to connect Dataserver")
 
     if('user_id' in session):
-        return redirect(url_for('home'))
+        return redirect(url_for('schedule'))
 
     if(login_mode == "signin"):
         if request.method == 'POST':
@@ -74,6 +74,7 @@ def login(login_mode):
                     user_found = True
                     session['user_id'] = user_data[0]
                     session['username'] = user_data[1]
+                    session.permanent = True
 
             if user_found:
                 return redirect(url_for('schedule'))
@@ -117,70 +118,78 @@ def schedule():
     filtering = None
     a_selected = d_selected = "All"
 
-    if(request.method == 'POST'):
-        if('defaulter' in request.form):
-            filtering = None
-            a_selected = d_selected = "All"
-        elif('filter' in request.form):
-            filtering = True
-            a_selected = request.form['arv_select']
-            d_selected = request.form['dep_select']
-        elif('submit' in request.form):
+    if('user_id' in session):
+        if(request.method == 'POST'):
+            if('defaulter' in request.form):
+                filtering = None
+                a_selected = d_selected = "All"
+            elif('filter' in request.form):
+                filtering = True
+                a_selected = request.form['arv_select']
+                d_selected = request.form['dep_select']
+            elif('submit' in request.form):
+                if('selected_row' in request.form):
+                    print(request.form['selected_row'])
+                    session['schedule_id'] = request.form['selected_row']
+                    session['ticket_booked'] = False
+                    return redirect((url_for('ticket')))
+
+        dbconn = get_db()
+        schedule, arv_stat, dep_stat = dbconn.retrieve_schedules()
+
+        if(dbconn.errorflag):
+            return render_template('schedule.html',
+                                   error_message= "Server Not working")
+
+        if(filtering):
+            schedule, arv_stat, dep_stat = dbconn.retrieve_schedules(d_selected, a_selected)
+            #print(a_selected)
+            #print(d_selected)
+        #print(schedule)
+
+        return render_template('schedule.html',
+                               schedule_table= schedule,
+                               arv_stat = arv_stat,
+                               dep_stat = dep_stat,
+                               a_selected= a_selected,
+                               d_selected = d_selected)
+    return redirect(url_for('logout'))
+
+
+@app.route('/ticket', methods= ['GET', 'POST'])
+def ticket():
+    if('user_id' in session and 'schedule_id' in session):
+        if(request.method == "POST"):
+            if(session['ticket_booked']):
+                pass
+            elif('back' in request.form):
+                session['schedule_id'] = None
+                return redirect(url_for('schedule'))
+
+        dbconn = get_db()
+        train_data, _, _ = dbconn.retrieve_schedules(where=f"WHERE Shid={session['schedule_id']}")
+        train_data = train_data[0]
+
+        customer_data = dbconn.get_customer_data(session['user_id'])
+
+        if(dbconn.errorflag):
             pass
 
-    dbconn = get_db()
-    schedule, arv_stat, dep_stat = dbconn.retrieve_schedules()
+        print(customer_data)
+        print(train_data)
 
-    if(dbconn.errorflag):
-        return render_template('schedule.html',
-                               error_message= "Server Not working")
+        return render_template('ticket.html', 
+                            name= customer_data['Cuname'],
+                            age= customer_data['Cuage'],
+                            gender= customer_data['Cugender'],
+                            train_name= train_data[1],
+                            arv_station = train_data[2],arv_time = train_data[3],
+                            dep_station = train_data[4],dep_time = train_data[5],
+                    ticket_booked= False)
 
-    if(filtering):
-        schedule, arv_stat, dep_stat = dbconn.retrieve_schedules(d_selected, a_selected)
-        print(a_selected)
-        print(d_selected)
-    print(schedule)
-
-    return render_template('schedule.html',
-                           schedule_table= schedule,
-                           arv_stat = arv_stat,
-                           dep_stat = dep_stat,
-                           a_selected= a_selected,
-                           d_selected = d_selected)
-
-
-@app.route('/home', methods= ['GET', 'POST'])
-def home():
-    if('username' in session):
-        form_fields = [
-        {'name': 'name', 'label': 'Name', 'type': 'text'},
-        {'name': 'email', 'label': 'Email', 'type': 'email'},
-        {'name': 'age', 'label': 'Age', 'type': 'number'},
-        ]
-        train_headers = ["Select", 'Train', 'Arv. Station', 'Arv. Time', 'Dep. Station', 'Dep. Time']
-        train_data = [
-            (3, 'Train', 'Arv. Station', 'Arv. Time', 'Dep. Station', 'Dep. Time'),
-            (4, 'Train', 'Arv. Station', 'Arv. Time', 'Dep. Station', 'Dep. Time'),
-            (5, 'Train', 'Arv. Station', 'Arv. Time', 'Dep. Station', 'Dep. Time')
-        ]
-        data_len = len(train_headers)
-
-        # if request.method == 'POST':
-        #     form_data = request.form.to_dict()
-        #     print("Form Data:", form_data)
-        #     #  Here you would process the form data (e.g., save to a database)
-        #     table_data.append(form_data) # just add to table_data for display
-        #     return render_template('home.html', 
-        #             form_fields=form_fields, 
-        #             table_headers=table_headers, 
-        #             table_data=table_data)
-
-        return render_template('home.html', 
-                table_headers= train_headers, 
-                table_data= train_data,
-                row_len= data_len,
-                selected_row = 1)
-    return logout()
+    elif('user_id' in session):
+        return redirect(url_for(schedule))
+    return redirect(url_for('logout'))
 
 
 # For reset session
