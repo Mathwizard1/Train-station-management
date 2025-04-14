@@ -1,3 +1,4 @@
 application/client/__pycache__/*
 __pycache__/*
 application/server/__pycache__/*
+backup/*
