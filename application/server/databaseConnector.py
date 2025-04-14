@@ -24,27 +24,28 @@ class DatabaseConnector:
             print(f"Connection Established With Server")
         except:
             print(f"ERROR: Could Not Connect To Server")
-            return False
+            return True
 
         if(dbname!=""):
-            self.set_database(dbname=dbname)
+            return self.set_database(dbname=dbname)
 
     #Select Database And Store Tables
     def set_database(self,dbname):
         try:
             self.connection.select_db(dbname)
             self.dbname=dbname
-            self.get_tables(store=True)
+            flag=self.get_tables(store=True)
             print(f"Connected To Database {dbname}")
+            return flag
         except:
             print(f"ERROR: Could Not Connect To Database {dbname}")
-            return False
+            return True
 
     #Retrieve Tables
     def get_tables(self,store=False):
         if(self.dbname==""):
             print("ERROR: Database Not Set")
-            return False
+            return True
 
         try:
             self.execute_query("SHOW TABLES;")
@@ -61,7 +62,7 @@ class DatabaseConnector:
 
         except:
             print("ERROR: Could Not Retrieve Tables")
-            return False
+            return True
 
     #Add Entry
     def insert_entry(self,table,entry):
@@ -81,15 +82,16 @@ class DatabaseConnector:
                     query+=","
 
             query+=");"
-            self.execute_query(query=query)
-            
+            flag=self.execute_query(query=query)
+            if(flag==True):
+                return flag
         except:
             print(f"ERROR: Could Not Add Entry Into {table}")
-            return False
+            return True
     
     def clear_table(self,table):
         query=f"DELETE FROM {table};"
-        self.execute_query(query=query)
+        return self.execute_query(query=query)
 
     #Execute Query
     def execute_query(self,query,commit=True):
@@ -99,7 +101,7 @@ class DatabaseConnector:
                 self.connection.commit()
         except:
             print(f"ERROR: Could Not Execute Query '{query}'")
-            return False
+            return True
 
 
     ##########
@@ -109,7 +111,7 @@ class DatabaseConnector:
     #Retrieve ALL values
     def retrieve_values(self,table):
         query=f"SELECT * FROM {table};"
-        self.execute_query(query=query)
+        flag=self.execute_query(query=query)
         rows=self.cursor.fetchall()
         output=[]
         for row in rows:
@@ -117,13 +119,22 @@ class DatabaseConnector:
             for entry in row:
                 out.append(row[entry])
             output.append(out)
-        return output
+        
+        if(flag):
+            return flag
+        else:
+            return output
     
     def retrieve_schedules(self):
         rows=self.retrieve_values("schedules")
 
+        if(rows==True):
+            return True
+
         query=f"SELECT Trid,Trname from trains;"
-        self.execute_query(query)
+        flag=self.execute_query(query)
+        if(flag==True):
+            return True
         traindata=self.cursor.fetchall()
 
         traindict={}
@@ -131,7 +142,9 @@ class DatabaseConnector:
             traindict[data["Trid"]]=data["Trname"]
         
         query=f"SELECT Stid,Stname from stations;"
-        self.execute_query(query)
+        flag=self.execute_query(query)
+        if(flag==True):
+            return True
         stationdata=self.cursor.fetchall()
 
         stationdict={}
@@ -152,7 +165,9 @@ class DatabaseConnector:
     #Convert Train Name to Train ID
     def train_id_retriever(self,train_name):
          query=f"SELECT tr.Trid FROM coach_infos as coi inner join trains as tr on coi.CiTrid=tr.Trid where tr.Trname='{train_name}';"
-         self.execute_query(query)
+         flag=self.execute_query(query)
+         if(flag==True):
+             return flag
          row=self.cursor.fetchone()
          if(row==None):
              print("ERROR: No Such Train")
@@ -164,9 +179,13 @@ class DatabaseConnector:
     def check_ticket_availability(self,train,coach):
         if(type(train)==str):
             train=self.train_id_retriever(train)
+            if(train==True):
+                return True
 
         query=f"SELECT * FROM coach_infos where CiConame='{coach}' and CiTrid={train};"
-        self.execute_query(query=query)
+        flag=self.execute_query(query=query)
+        if(flag==True):
+            return True
         row=self.cursor.fetchone()
         if(row==None):
             return "No Such Coach"
@@ -179,21 +198,27 @@ class DatabaseConnector:
     def create_ticket(self,train,coach,custid,check_available=False):
         if(type(train)==str):
             train=self.train_id_retriever(train)
+            if(train==True):
+                return True
         
         if(check_available):
             if(not self.check_ticket_availability(train,coach)):
                 print("Ticket Not Available")
-                return
+                return True
         
         query=f"SELECT CiComaxsize from coach_infos where CiTrid={train} and CiConame='{coach}';"
-        self.execute_query(query)
+        flag=self.execute_query(query)
+        if(flag==True):
+            return True
         row=self.cursor.fetchone()
         maxsize=row["CiComaxsize"]
 
         all_seats=[i for i in range(1,maxsize+1)]
         
         query=f"SELECT Tiseatnum FROM tickets where TiTrid={train} and TiConame='{coach}';"
-        self.execute_query(query)
+        flag=self.execute_query(query)
+        if(flag==True):
+            return flag
         rows=self.cursor.fetchall()
         taken_seats=[]
         for row in rows:
@@ -203,20 +228,26 @@ class DatabaseConnector:
 
         if(len(available_seats)==0):
             print("No Seats Available")
-            return False
+            return True
 
         query=f"select sysdate();"
-        self.execute_query(query)
+        flag=self.execute_query(query)
+        if(flag==True):
+            return flag
         row=self.cursor.fetchone()
         
         bookingtime=row['sysdate()']
         seatnum=available_seats[np.random.randint(0,len(available_seats))]
         ticketid=np.random.randint(10000,100000)
 
-        self.insert_entry(table="tickets",entry=[ticketid,train,coach,custid,seatnum,bookingtime])
+        flag=self.insert_entry(table="tickets",entry=[ticketid,train,coach,custid,seatnum,bookingtime])
+        if(flag==True):
+            return flag
 
         query=f"UPDATE coach_infos SET Cisize=Cisize+1 where CiTrid={train} and CiConame='{coach}';"
-        self.execute_query(query)
+        flag=self.execute_query(query)
+        if(flag==True):
+            return flag
 
     #Create Waiting
     def create_waiting(self,train,coach,custid):
@@ -224,7 +255,9 @@ class DatabaseConnector:
             train=self.train_id_retriever(train)
 
         query=f"select sysdate();"
-        self.execute_query(query)
+        flag=self.execute_query(query)
+        if(flag==True):
+            return flag
         row=self.cursor.fetchone()
         
         waittime=row['sysdate()']
@@ -238,36 +271,50 @@ class DatabaseConnector:
             train=self.train_id_retriever(train)
 
         query=f"SELECT Tiseatnum from tickets where TiTrid={train} and TiConame='{coach}' and TiCuid={custid};"
-        self.execute_query(query)
+        flag=self.execute_query(query)
+        if(flag==True):
+            return flag
         row=self.cursor.fetchone()
 
         seatnum=row['Tiseatnum']
 
         query=f"DELETE FROM tickets where TiTrid={train} and TiConame='{coach}' and TiCuid={custid};"
-        self.execute_query(query)
+        flag=self.execute_query(query)
+        if(flag==True):
+            return flag
         query=f"UPDATE coach_infos SET Cisize=Cisize-1 where CiTrid={train} and CiConame='{coach}'"
-        self.execute_query(query)
+        flag=self.execute_query(query)
+        if(flag==True):
+            return flag
         
         if(autoupgrade):
             query=f"SELECT * FROM waitings where Watime=(select min(Watime) from waitings);"
-            self.execute_query(query=query)
+            flag=self.execute_query(query)
+            if(flag==True):
+                return flag
             row=self.cursor.fetchone()
 
             if(row==None):
                 return
 
             query=f"select sysdate();"
-            self.execute_query(query)
+            flag=self.execute_query(query)
+            if(flag==True):
+                return flag
             timerow=self.cursor.fetchone()
         
             bookingtime=timerow['sysdate()']
 
             self.insert_entry(table="tickets",entry=[row["Waid"],train,coach,row["WaCuid"],seatnum,bookingtime])
             query=f"UPDATE coach_infos SET Cisize=Cisize+1 where CiTrid={train} and CiConame='{coach}'"
-            self.execute_query(query)
+            flag=self.execute_query(query)
+            if(flag==True):
+                return flag
 
             query=f"DELETE FROM waitings where Waid={row["Waid"]}"
-            self.execute_query(query=query)
+            flag=self.execute_query(query)
+            if(flag==True):
+                return flag
         
         return
     
@@ -275,13 +322,19 @@ class DatabaseConnector:
     def update_train_status(self,train,newstatus):
         if(type(train)==str):
             train=self.train_id_retriever(train)
+            if(train==True):
+                return train
 
         query=f"UPDATE trains SET Trstatus='{newstatus}' where Trid={train};"
-        self.execute_query(query)
+        flag=self.execute_query(query)
+        if(flag==True):
+            return flag
 
         if(newstatus=="Stationed"):
             query=f"DELETE FROM tickets where TiTrid={train};"
-            self.execute_query(query)
+            flag=self.execute_query(query)
+            if(flag==True):
+                return flag
 
             query=f"UPDATE coach_infos SET Cisize=0 where CiTrid={train};"
 
@@ -290,14 +343,18 @@ class DatabaseConnector:
     #Add Customer
     def add_customer(self,info):
         query=f"SELECT * FROM customers where Cuid={info[0]};"
-        self.execute_query(query)
+        flag=self.execute_query(query)
+        if(flag==True):
+            return flag
         row=self.cursor.fetchone()
         if(row!=None):
             print(f"ERROR: Duplicate ID '{info[0]}' Found")
             return False
 
         query=f"INSERT INTO customers VALUES ({info[0]},'{info[1]}',{info[2]},'{info[3]}');"
-        self.execute_query(query=query)
+        flag=self.execute_query(query)
+        if(flag==True):
+            return flag
         
 
 
