@@ -173,16 +173,26 @@ class DatabaseConnector:
     
     #Convert Train Name to Train ID
     def train_id_retriever(self,train_name):
-         query=f"SELECT tr.Trid FROM coach_infos as coi inner join trains as tr on coi.CiTrid=tr.Trid where tr.Trname='{train_name}';"
-         self.execute_query(query)
-         row=self.cursor.fetchone()
-         if(row==None):
-             print("ERROR: No Such Train")
-         else:
+        query=f"SELECT tr.Trid FROM coach_infos as coi inner join trains as tr on coi.CiTrid=tr.Trid where tr.Trname='{train_name}';"
+        self.execute_query(query)
+        row=self.cursor.fetchone()
+        if(row==None):
+            print("ERROR: No Such Train")
+        else:
             return row["Trid"]
 
     def train_coach_retriver(self,train_id):
-        pass
+        query=f"SELECT CiConame FROM coach_infos WHERE CiTrid= {train_id};"
+        self.execute_query(query)
+        rows=self.cursor.fetchall()
+        output=[]
+        for row in rows:
+            out=[]
+            for entry in row:
+                out.append(row[entry])
+            output.append(out)
+
+        return output
     
     def get_customer_data(self, customer_id):
         query=f"SELECT Cuname,Cuage,Cugender FROM Customers WHERE Cuid= {customer_id};"

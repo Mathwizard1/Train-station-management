@@ -131,7 +131,7 @@ def schedule():
                 if('selected_row' in request.form):
                     print(request.form['selected_row'])
                     session['schedule_id'] = request.form['selected_row']
-                    session['ticket_booked'] = False
+                    session['ticket_booked'] = "booking"
                     return redirect((url_for('ticket')))
 
         dbconn = get_db()
@@ -155,40 +155,81 @@ def schedule():
                                d_selected = d_selected)
     return redirect(url_for('logout'))
 
-
 @app.route('/ticket', methods= ['GET', 'POST'])
 def ticket():
+    dbconn = get_db()
+
     if('user_id' in session and 'schedule_id' in session):
         if(request.method == "POST"):
-            if(session['ticket_booked']):
-                pass
-            elif('back' in request.form):
-                session['schedule_id'] = None
-                return redirect(url_for('schedule'))
+            if(session['ticket_booked'] != 'booked'):
+                if('back' in request.form):
+                    session.pop('schedule_id', None)
+                    session.pop('train', None)
+                    session.pop('coach', None)
 
-        dbconn = get_db()
+                    return redirect(url_for('schedule'))
+                elif('submit' in request.form and 
+                    'coach_selections' in request.form and request.form['coach_selections'] != ""):
+                    coach = request.form['coach_selections']
+
+                    #TODO Ticket system and waiting
+                    print(coach)
+
+                    session['coach'] = coach
+                    session['ticket_booked'] = 'booked'
+            elif('cancel' in request.form):
+                # dbconn.cancel_ticket(session['user_id'], session['train'], session['coach'])
+                session.pop('schedule_id', None)
+                session.pop('train', None)
+                session.pop('coach', None)
+
+                session['ticket_booked'] = 'cancelled'
+                return render_template('ticket.html', ticket_booked= session['ticket_booked'])
+
         train_data, _, _ = dbconn.retrieve_schedules(where=f"WHERE Shid={session['schedule_id']}")
-        train_data = train_data[0]
+        if(dbconn.errorflag):
+            return render_template('ticket.html', error_message="SERVER ERROR")
 
+        train_data = train_data[0]
+        session['train'] = train_data[1]
+
+        train_id = dbconn.train_id_retriever(train_data[1])
         customer_data = dbconn.get_customer_data(session['user_id'])
 
         if(dbconn.errorflag):
-            pass
+            return render_template('ticket.html', error_message="SERVER ERROR")
+
+        coachs = ["A1", "B2", "B3"]
 
         print(customer_data)
         print(train_data)
 
-        return render_template('ticket.html', 
-                            name= customer_data['Cuname'],
-                            age= customer_data['Cuage'],
-                            gender= customer_data['Cugender'],
-                            train_name= train_data[1],
-                            arv_station = train_data[2],arv_time = train_data[3],
-                            dep_station = train_data[4],dep_time = train_data[5],
-                    ticket_booked= False)
+        param_dict = {
+            'name': customer_data['Cuname'],
+            'age': customer_data['Cuage'],
+            'gender': customer_data['Cugender'],
 
+            'coachs': coachs,
+
+            'train_name': session['train'],
+            'arv_station': train_data[2],
+            'arv_time': train_data[3],
+            'dep_station': train_data[4],
+            'dep_time': train_data[5],
+
+            'ticket_booked': session['ticket_booked']
+        }
+
+        if(session['ticket_booked'] == 'booked'):
+            param_dict['coach'] = session['coach']
+            param_dict['ticket_id'] = 12121
+            param_dict['seat'] = [1,2,3]
+
+        return render_template('ticket.html', 
+                    **param_dict)
+    
     elif('user_id' in session):
-        return redirect(url_for(schedule))
+        return redirect(url_for('schedule'))
     return redirect(url_for('logout'))
 
 
