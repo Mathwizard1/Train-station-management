@@ -121,7 +121,8 @@ def schedule():
     flag = dbconn.retrieve_schedules()
 
     if(flag == True):
-        print("Fucked")
+        return render_template('schedule.html',
+                               error_message= "Server Not working")
 
     schedule = flag
     print(schedule)
@@ -162,6 +163,7 @@ def home():
                 row_len= data_len,
                 selected_row = 1)
     return logout()
+
 
 # For reset session
 @app.route('/logout')
