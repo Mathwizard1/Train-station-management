@@ -1,11 +1,32 @@
 from flask import Flask, render_template, request, redirect, url_for
 from application.server.databaseConnector import DatabaseConnector
-from flask import session
+from flask import session, g
 
 import secrets
 
 app = Flask(__name__)
 app.secret_key = secrets.token_hex(4)
+
+# Function to get database connection using Flask's g
+def get_db():
+    if 'db' not in g:
+        try:
+            g.db = DatabaseConnector()
+        except Exception as e:
+            print(f"Error connecting to database: {e}")
+            raise
+    return g.db
+
+# Function to close database connection
+@app.teardown_appcontext
+def close_db(e=None):
+    db = g.pop('db', None)
+    if db is not None:
+        try:
+            # db.close()
+            pass
+        except Exception as e:
+            print(f"Error closing database connection: {e}")
 
 @app.route('/')
 def landing():
@@ -25,8 +46,8 @@ def handle_login():
 
 @app.route('/login/<login_mode>', methods=['GET', 'POST'])
 def login(login_mode):
-    session['database'] = DatabaseConnector()
-    flag = session['database'].connect("TrainManagement")
+    dbconn = get_db()
+    flag = dbconn.connect("TrainManagement")
 
     if(flag):
         return render_template('login.html', login_mode= login_mode, error_message="Failed to connect Dataserver")
@@ -36,16 +57,24 @@ def login(login_mode):
 
     if(login_mode == "signin"):
         if request.method == 'POST':
-            session['username'] = request.form.get('username')
+            username = request.form.get('username')
             password = request.form.get('password')
 
-            user_data = session['database'].retrieve_values('Customers')
+            if (username == '' or password == ''):
+                return render_template('login.html', login_mode= login_mode, error_message="Empty credentials")
 
-            if session['username'] != '' and password != '':
-                # TODO sql check
+            user_datas = dbconn.retrieve_values('Customers')#, 'Cuid, Cuname, Cupassword')
+            print(user_datas)
 
-                #session['user_id'] = userid
+            user_found = False
+            for user_data in user_datas:
+                if(username == user_data[1] and password == user_data[4]):
 
+                    user_found = True
+                    session['user_id'] = user_data[0]
+                    session['username'] = user_data[1]
+
+            if user_found:
                 return redirect(url_for('home'))
             return render_template('login.html', login_mode= login_mode, error_message="Invalid credentials")
     elif(login_mode == "signup"):
@@ -56,15 +85,19 @@ def login(login_mode):
             password = request.form.get('password')
             repassword = request.form.get('repassword')
 
+            if(username == '' or password == '' or repassword == ''
+                or age is None or gender not in ['M', 'F', 'U']):
+                return render_template('login.html', login_mode= login_mode, error_message="Invalid credentials")
+
             if password == repassword:
                 # TODO sql check
 
-                # session['user_id'] = username
+                session['user_id'] = username
                 session['username'] = username
 
                 return redirect(url_for('home'))
             else:
-                return render_template('login.html', login_mode= login_mode, error_message="Invalid credentials")
+                return render_template('login.html', login_mode= login_mode, error_message="Password Mismatch")
     return render_template('login.html', login_mode= login_mode)
 
 @app.route('/home', methods= ['GET', 'POST'])

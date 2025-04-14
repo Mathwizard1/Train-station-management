@@ -226,6 +226,7 @@ if(__name__ == "__main__"):
         },
         constraints= {
             "Cuid": "AUTO_INCREMENT PRIMARY KEY",
+            "Cuname": "UNIQUE",
             "Cupassword": "UNIQUE"
         }
     )
