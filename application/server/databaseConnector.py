@@ -127,7 +127,7 @@ class DatabaseConnector:
 
         return output
     
-    def retrieve_schedules(self):
+    def retrieve_schedules(self,dept="",arr=""):
         rows=self.retrieve_values("schedules")
 
         query=f"SELECT Trid,Trname from trains;"
