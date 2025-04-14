@@ -270,6 +270,23 @@ class DatabaseConnector:
         
         return
     
+    #Update Train Status
+    def update_train_status(self,train,newstatus):
+        if(type(train)==str):
+            train=self.train_id_retriever(train)
+
+        query=f"UPDATE trains SET Trstatus='{newstatus}' where Trid={train};"
+        self.execute_query(query)
+
+        if(newstatus=="Stationed"):
+            query=f"DELETE FROM tickets where TiTrid={train};"
+            self.execute_query(query)
+
+            query=f"UPDATE coach_infos SET Cisize=0 where CiTrid={train};"
+
+        return
+
+    #Add Customer
     def add_customer(self,info):
         query=f"SELECT * FROM customers where Cuid={info[0]};"
         self.execute_query(query)
@@ -287,7 +304,3 @@ if __name__=="__main__":
 
     connector=DatabaseConnector()
     connector.connect("trainmanagement")
-
-    connector.clear_table("tickets")
-    connector.create_ticket(train=123,coach="A1",custid=1)
-    connector.cancel_ticket(custid=1,train=123,coach="A1")
