@@ -214,6 +214,9 @@ class DatabaseConnector:
 
         self.insert_entry(table="tickets",entry=[ticketid,train,coach,custid,seatnum,bookingtime])
 
+        query=f"UPDATE coach_infos SET Cisize=Cisize+1 where CiTrid={train} and CiConame='{coach}';"
+        self.execute_query(query)
+
     #Create Waiting
     def create_waiting(self,train,coach,custid):
         if(type(train)==str):
@@ -241,11 +244,16 @@ class DatabaseConnector:
 
         query=f"DELETE FROM tickets where TiTrid={train} and TiConame='{coach}' and TiCuid={custid};"
         self.execute_query(query)
+        query=f"UPDATE coach_infos SET Cisize=Cisize-1 where CiTrid={train} and CiConame='{coach}'"
+        self.execute_query(query)
         
         if(autoupgrade):
             query=f"SELECT * FROM waitings where Watime=(select min(Watime) from waitings);"
             self.execute_query(query=query)
             row=self.cursor.fetchone()
+
+            if(row==None):
+                return
 
             query=f"select sysdate();"
             self.execute_query(query)
@@ -254,6 +262,8 @@ class DatabaseConnector:
             bookingtime=timerow['sysdate()']
 
             self.insert_entry(table="tickets",entry=[row["Waid"],train,coach,row["WaCuid"],seatnum,bookingtime])
+            query=f"UPDATE coach_infos SET Cisize=Cisize+1 where CiTrid={train} and CiConame='{coach}'"
+            self.execute_query(query)
 
             query=f"DELETE FROM waitings where Waid={row["Waid"]}"
             self.execute_query(query=query)
@@ -278,4 +288,6 @@ if __name__=="__main__":
     connector=DatabaseConnector()
     connector.connect("trainmanagement")
 
-    connector.retrieve_schedules()
+    connector.clear_table("tickets")
+    connector.create_ticket(train=123,coach="A1",custid=1)
+    connector.cancel_ticket(custid=1,train=123,coach="A1")
