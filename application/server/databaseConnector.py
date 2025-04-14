@@ -24,7 +24,7 @@ class DatabaseConnector:
             print(f"Connection Established With Server")
         except:
             print(f"ERROR: Could Not Connect To Server")
-            return -1
+            return False
 
         if(dbname!=""):
             self.set_database(dbname=dbname)
@@ -38,13 +38,13 @@ class DatabaseConnector:
             print(f"Connected To Database {dbname}")
         except:
             print(f"ERROR: Could Not Connect To Database {dbname}")
-            return -1
+            return False
 
     #Retrieve Tables
     def get_tables(self,store=False):
         if(self.dbname==""):
             print("ERROR: Database Not Set")
-            return -1
+            return False
 
         try:
             self.execute_query("SHOW TABLES;")
@@ -61,7 +61,7 @@ class DatabaseConnector:
 
         except:
             print("ERROR: Could Not Retrieve Tables")
-            return -1
+            return False
 
     #Add Entry
     def insert_entry(self,table,entry):
@@ -85,7 +85,7 @@ class DatabaseConnector:
             
         except:
             print(f"ERROR: Could Not Add Entry Into {table}")
-            return -1
+            return False
     
     def clear_table(self,table):
         query=f"DELETE FROM {table};"
@@ -99,6 +99,7 @@ class DatabaseConnector:
                 self.connection.commit()
         except:
             print(f"ERROR: Could Not Execute Query '{query}'")
+            return False
 
 
     ##########
@@ -202,7 +203,7 @@ class DatabaseConnector:
 
         if(len(available_seats)==0):
             print("No Seats Available")
-            return -1
+            return False
 
         query=f"select sysdate();"
         self.execute_query(query)
@@ -293,7 +294,7 @@ class DatabaseConnector:
         row=self.cursor.fetchone()
         if(row!=None):
             print(f"ERROR: Duplicate ID '{info[0]}' Found")
-            return -1
+            return False
 
         query=f"INSERT INTO customers VALUES ({info[0]},'{info[1]}',{info[2]},'{info[3]}');"
         self.execute_query(query=query)
