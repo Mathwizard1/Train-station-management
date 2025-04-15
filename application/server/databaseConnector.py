@@ -406,7 +406,7 @@ class DatabaseConnector:
 
         query=f"INSERT INTO customers VALUES ({info[0]},'{info[1]}',{info[2]},'{info[3]}','{info[4]}');"
         self.execute_query(query,commit=True)
-        
+    
     def close(self):
         self.connection.close()
         self.cursor = None
