@@ -9,11 +9,23 @@
     margin: 5px;
     outline: none;
 }
+
+.active{
+    opacity: 0.5;
+}
   
 .tabcontent {
     display: none;
     padding: 6px 12px;
     border-top: none;
+}
+
+.Departed,.Incoming{
+    text-decoration: underline;
+}
+
+.Stationed{
+    font-weight: bold;
 }
 
 .error-message {

@@ -36,15 +36,13 @@
           document.getElementById(tabName).style.display = "block";
           evt.currentTarget.className += " active";
         }
-        document.getElementById("defaultOpen").click();
     </script>
 
     <!-- Tab links -->
     <div class="tab">
-       <button class="tablinks btn btn-primary" onclick="openTab(event, 'schedule')">Schedule</button>
+       <button class="tablinks btn btn-primary" onclick="openTab(event, 'schedule')" id="defaultOpen">Schedule</button>
        <button class="tablinks btn btn-info" onclick="openTab(event, 'train_status')">Train Status</button>
     </div>
-
 
     <div id="schedule" class="container tabcontent">
         <h1>Schedule</h1>
@@ -149,7 +147,6 @@
         {% if error_message %}
             <h1 class="error-message">{{ error_message }}</h1>
         {% else %}
-        <form method="POST">
             <div class="row mt-4">
                 <div class="col-12">
                     <div class="table-container">
@@ -174,7 +171,7 @@
                                         <td>{{ data[3] }}</td>
                                         <td>{{ data[4] }}</td>
                                         <td>{{ data[5] }}</td>
-                                        <td>{{ data[6] }}</td>
+                                        <td class="{{ data[6] }}">{{ data[6] }}</td>
                                     </tr>
                                 {% endfor %}
                             </tbody>
@@ -182,8 +179,11 @@
                     </div>
                 </div>
             </div>
-        </form>
         {% endif %}
     </div>
+
+    <script>
+        document.getElementById("defaultOpen").click();
+    </script>
 </body>
 </html>

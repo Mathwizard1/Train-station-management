@@ -130,14 +130,15 @@ class DatabaseConnector:
     def retrieve_schedules(self,dept="All",arr="All",where=""):
         rows=self.retrieve_values("schedules",where=where)
 
-        query=f"SELECT Trid,Trname from trains;"
+        query=f"SELECT Trid,Trname,Trstatus from trains;"
         self.execute_query(query)
         traindata=self.cursor.fetchall()
 
         traindict={}
         for data in traindata:
             traindict[data["Trid"]]=data["Trname"]
-        
+            traindict[data["Trname"]]=data["Trstatus"]
+
         query=f"SELECT Stid,Stname from stations;"
         self.execute_query(query)
         stationdata=self.cursor.fetchall()
@@ -149,12 +150,16 @@ class DatabaseConnector:
         arv_stat = set()
         dep_stat = set()
 
-        for row in rows:
+        for i, row in enumerate(rows):
+            train_name = traindict[row[1]]
             row[1]=traindict[row[1]]
             row[2]=stationdict[row[2]]
             row[3]=row[3].strftime('%I:%M:%S %p %d/%m/%Y')
             row[4]=stationdict[row[4]]
             row[5]=row[5].strftime('%I:%M:%S %p %d/%m/%Y')
+
+            # add status
+            rows[i].append(traindict[train_name])
 
             arv_stat.add(row[2])
             dep_stat.add(row[4])
@@ -168,7 +173,6 @@ class DatabaseConnector:
                 elif(row[2]==arr or row[4]==dept):
                     temprows.append(row)
             rows=temprows 
-
         return rows, tuple(arv_stat), tuple(dep_stat)
     
     #Convert Train Name to Train ID
@@ -411,4 +415,4 @@ if __name__=="__main__":
 
     connector=DatabaseConnector()
     connector.connect("trainmanagement")
-    #connector.cancel_ticket(3, 123, 'A1')
+    connector.retrieve_schedules()

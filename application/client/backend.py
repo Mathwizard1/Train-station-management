@@ -327,16 +327,16 @@ def logout():
     return redirect(url_for('login', login_mode= 'signin'))
 
 if __name__ == '__main__':
-    ports = [5000]#, 5001]
+    ports = [5000, 5001]
     threads = []
 
     app.run(debug=True, port= ports[0])
     exit()
 
-    for port in ports:
-        t = threading.Thread(target= app.run, kwargs={'debug':False,'port': port})
-        t.start()
-        threads.append(t)
+    # for port in ports:
+    #     t = threading.Thread(target= app.run, kwargs={'debug':False,'port': port})
+    #     t.start()
+    #     threads.append(t)
 
-    for thread in threads:
-        thread.join()
+    # for thread in threads:
+    #     thread.join()
