@@ -3,13 +3,12 @@ from application.server.databaseConnector import DatabaseConnector
 from flask import session, g
 from flask import jsonify
 
+import threading
 import secrets
-
-# TODO remove this i
-i = 0
 
 app = Flask(__name__)
 app.secret_key = secrets.token_hex(4)
+
 
 # Function to get database connection using Flask's g
 def get_db():
@@ -132,7 +131,7 @@ def schedule():
                 d_selected = request.form['dep_select']
             elif('submit' in request.form):
                 if('selected_row' in request.form):
-                    print(request.form['selected_row'])
+                    #print(request.form['selected_row'])
                     session['schedule_id'] = request.form['selected_row']
                     session['ticket_booked'] = "booking"
                     return redirect((url_for('ticket')))
@@ -176,19 +175,30 @@ def ticket():
                     coach = request.form['coach_selections']
                     session['coach'] = coach
 
-                    print(coach)
-                    dbconn.check_ticket_availability()
+                    rac_status = False
+                    if('racval' in request.form):
+                        rac_status = True
 
+                    seat_num, rac_type = dbconn.create_ticket(
+                                            train= session['train'], coach= session['coach'],
+                                            custid= session['user_id'],
+                                            give_rac= rac_status, check_available= True)
+                    
+                    if(seat_num != -1):
+                        session['seat'] = seat_num
+                        session['rac'] = "Yes" if(rac_type) else "No"
+                        session['ticket_booked'] = 'booked'
+                        return redirect(url_for('ticket'))
 
                     if('waitval' in request.form):
-                        pass
-                    elif('racval' in request.form):
-                        pass
+                        session['ticket_booked'] = 'waiting'
+                        dbconn.create_waiting(session['train'], session['coach'], session['user_id'])
+                        return redirect(url_for('waiting'))
 
                     session['ticket_booked'] = 'no_ticket'
                     return redirect(url_for('ticket'))
             elif('cancel' in request.form):
-                # dbconn.cancel_ticket(session['user_id'], session['train'], session['coach'])
+                dbconn.cancel_ticket(session['user_id'], session['train'], session['coach'])
                 session.pop('schedule_id', None)
                 session.pop('train', None)
                 session.pop('coach', None)
@@ -236,8 +246,9 @@ def ticket():
             param_dict.pop('coachs', None)
             param_dict['coach'] = session['coach']
 
-            param_dict['ticket_id'] = 12121
-            param_dict['seat'] = [1,2,3]
+            param_dict['ticket_id'] = session
+            param_dict['seat'] = session['seat']
+            param_dict['rac'] = session['rac']
 
         return render_template('ticket.html', 
                     **param_dict)
@@ -248,17 +259,24 @@ def ticket():
 
 @app.route('/check_Waiting_List')
 def check_Waiting_List():
-    # TODO sql waiting list update
-    print("checking")
+    if('user_id' in session and 'train' in session and 'coach' in session):
+        dbconn = get_db()
+        current_status = dbconn.check_waiting(session['user_id'], session['train'], session['coach'])
+        train_id = dbconn.train_id_retriever(session['train'])
 
-    global i
-    if i < 2:
-        i += 1
-        return jsonify({"status": "waiting"})
-    else:
-        session['ticket_booked'] = 'booked'
-        return jsonify({"status": "changed", "redirect_url": url_for('ticket')})
+        ticket_val = dbconn.retrieve_values('tickets', 'Tiseatnum,TiRACstatus', f"WHERE TiTrid={train_id} and TiConame= '{session['coach']}' and TiCuid={session['user_id']}")
+        if(dbconn.errorflag):
+            return jsonify({"status": "waiting"})
 
+        session['seat'] = ticket_val[0][0]
+        session['rac'] = ticket_val[0][1]
+
+        if current_status:
+            return jsonify({"status": "waiting"})
+        else:
+            session['ticket_booked'] = 'booked'
+            return jsonify({"status": "changed", "redirect_url": url_for('ticket')})
+    return jsonify({"status": "changed", "redirect_url": url_for('logout')})
 
 @app.route('/waiting', methods= ['GET', 'POST'])
 def waiting():
@@ -309,4 +327,13 @@ def logout():
     return redirect(url_for('login', login_mode= 'signin'))
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    ports = [5000]#, 5001]
+    threads = []
+
+    for port in ports:
+        t = threading.Thread(target= app.run, kwargs={'debug':False,'port': port})
+        t.start()
+        threads.append(t)
+
+    for thread in threads:
+        thread.join()
