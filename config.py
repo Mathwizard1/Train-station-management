@@ -1,4 +1,5 @@
 import pymysql
+from coach_info_RAC import Create_Coach_RAC_Info
 
 class TABLE_SQL:
     def __init__(self, name, columns_dict, constraints = {}):
@@ -283,7 +284,8 @@ coach_info_table = TABLE_SQL(
         "CiConame": "CHAR(5)",
         "Cisize": "INT(2)",
         "CiComaxsize": "INT(5)",
-        "Cioversize": "INT(2)"
+        "Cioversize": "INT(2)",
+        "CiRACsize": "INT(2)"
     },
     constraints= {
         "pk_TrCo": "PRIMARY KEY(CiTrid, CiConame)",
@@ -291,12 +293,7 @@ coach_info_table = TABLE_SQL(
         "fk_CiConame": "FOREIGN KEY(CiConame) REFERENCES Coachs(Coname)"
     }
 )
-coach_info_data = (
-    (1, coach_data[0][0], 0, coach_data[0][1], 1),
-    (2, coach_data[1][0], 0, coach_data[1][1], 1),
-    (3, coach_data[2][0], 0, coach_data[2][1], 1),
-)
-coach_info_table._fill_self(coach_info_data)
+
 ticket_table = TABLE_SQL(
     "Tickets",
     columns_dict= {
@@ -305,6 +302,7 @@ ticket_table = TABLE_SQL(
         "TiConame": "CHAR(5)",
         "TiCuid": "INT(5)",
         "Tiseatnum": "INT(3)",
+        "TiRACstatus":"INT(1)",
         "Tibooking": "DATETIME"
     },
     constraints= {
@@ -344,6 +342,19 @@ cancellation_table = TABLE_SQL(
     }
 )
 
+rac_table=TABLE_SQL(
+    "rac",
+    columns_dict={
+        "RACTrid":"INT(5)",
+        "RACConame":"CHAR(5)",
+        "RACseatnum":"INT(3)",
+        "RACseatstatus":"INT(1)"
+    },
+    constraints={
+        "fk_RACTrCo": "FOREIGN KEY(RACTrid, RACConame) REFERENCES Coach_infos(CiTrid, CiConame)",
+    }
+)
+
 if __name__=="__main__":
     #print(coach_info_table._create_self())
     #print(customer_table._create_fill())
@@ -357,6 +368,7 @@ if __name__=="__main__":
         ticket_table,
         waiting_table,
         cancellation_table,
+        rac_table
     ]
     FILL_table = [
         station_table,
@@ -364,8 +376,9 @@ if __name__=="__main__":
         customer_table,
         schedule_table,
         coach_table,
-        #coach_info_table
     ]
+
     db_interface = DATABASE_SQL()
     db_interface.database_setup(tables_list= TABLES_table)
     db_interface.database_fillup(tables_list= FILL_table)
+    Create_Coach_RAC_Info()

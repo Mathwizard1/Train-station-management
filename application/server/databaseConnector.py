@@ -187,19 +187,21 @@ class DatabaseConnector:
          else:
             return row["Trid"]
 
-    def train_coach_retriver(self,train_id):
-        query=f"SELECT CiConame FROM coach_infos WHERE CiTrid= {train_id};"
+    #Retrieves Coaches from Train
+    def train_coach_retriver(self,train):
+        if isinstance(train,str):
+            train=self.train_id_retriever(train)
+
+        query=f"SELECT CiConame FROM coach_infos WHERE CiTrid={train};"
         self.execute_query(query)
         rows=self.cursor.fetchall()
         output=[]
         for row in rows:
-            out=[]
-            for entry in row:
-                out.append(row[entry])
-            output.append(out)
+            output.append(row["CiConame"])
 
         return output
     
+    #Gets Customer Data
     def get_customer_data(self, customer_id):
         query=f"SELECT Cuname,Cuage,Cugender FROM Customers WHERE Cuid= {customer_id};"
         self.execute_query(query=query,commit=False)
@@ -221,20 +223,28 @@ class DatabaseConnector:
         if(row['Cisize']<row['CiComaxsize']):
             return True
         else:
-            return False
+            query=f"SELECT RACseatnum FROM rac where RACConame='{coach}' and RACTrid={train} and RACseatstatus=0;"
+            self.execute_query(query)
+            rows=self.cursor.fetchall()
+            if(rows==None):
+                return False
+            else:
+                return True
+
         
     #Create Ticket
     def create_ticket(self,train,coach,custid,check_available=False):
         if isinstance(train,str):
             train=self.train_id_retriever(train)
-            if(train==True):
-                return True
         
         if(check_available):
             if(not self.check_ticket_availability(train,coach)):
                 print("Ticket Not Available")
-                return True
+                return
         
+        RACstatus=0
+        first_RAC_ticket=1
+
         query=f"SELECT CiComaxsize from coach_infos where CiTrid={train} and CiConame='{coach}';"
         self.execute_query(query)
         row=self.cursor.fetchone()
@@ -252,8 +262,18 @@ class DatabaseConnector:
         available_seats=list(set(all_seats)-set(taken_seats))
 
         if(len(available_seats)==0):
-            print("No Seats Available")
-            return True
+            query=f"SELECT RACseatnum FROM rac where RACConame='{coach}' and RACTrid={train} and RACseatstatus=0;"
+            self.execute_query(query)
+            rows=self.cursor.fetchall()
+            for row in rows:
+                available_seats.append(row['RACseatnum'])
+            
+            if(len(available_seats)==0):
+                print("No Seats Available")
+                return
+            else:
+                RACstatus=1
+                first_RAC_ticket=0
 
         query=f"select sysdate();"
         self.execute_query(query)
@@ -263,7 +283,20 @@ class DatabaseConnector:
         seatnum=available_seats[np.random.randint(0,len(available_seats))]
         ticketid=np.random.randint(10000,100000)
 
-        self.insert_entry(table="tickets",entry=[ticketid,train,coach,custid,seatnum,bookingtime])
+        #Tell user that their seat is eligible for RAC
+        if(first_RAC_ticket==1):
+            query=f"SELECT RACseatnum FROM rac where RACConame='{coach}' and RACTrid={train} and RACseatnum={seatnum};"
+            self.execute_query(query)
+            rows=self.cursor.fetchone()
+            if(rows!=None):
+                RACstatus=1
+
+        self.insert_entry(table="tickets",entry=[ticketid,train,coach,custid,seatnum,RACstatus,bookingtime])
+
+        #Update for Second RAC entry
+        if(RACstatus==1 and first_RAC_ticket==0):
+            query=f"UPDATE rac SET RACseatstatus=1 where RACseatnum={seatnum} and RACTrid={train} and RACConame='{coach}';"
+            self.execute_query(query,commit=True)
 
         query=f"UPDATE coach_infos SET Cisize=Cisize+1 where CiTrid={train} and CiConame='{coach}';"
         self.execute_query(query,commit=True)
@@ -290,8 +323,10 @@ class DatabaseConnector:
         query=f"SELECT Tiseatnum from tickets where TiTrid={train} and TiConame='{coach}' and TiCuid={custid};"
         self.execute_query(query)
         row=self.cursor.fetchone()
-
-        seatnum=row['Tiseatnum']
+        if(row==None):
+            deleted=False
+        else:
+            deleted=True
 
         query=f"DELETE FROM tickets where TiTrid={train} and TiConame='{coach}' and TiCuid={custid};"
         self.execute_query(query,commit=True)
@@ -299,25 +334,17 @@ class DatabaseConnector:
         query=f"UPDATE coach_infos SET Cisize=Cisize-1 where CiTrid={train} and CiConame='{coach}'"
         self.execute_query(query,commit=True)
         
-        if(autoupgrade):
-            query=f"SELECT * FROM waitings where Watime=(select min(Watime) from waitings);"
+        if(autoupgrade and deleted==True):
+            query=f"SELECT WaCuid FROM waitings where Watime=(select min(Watime) from waitings) and WaTrid={train} and WaConame='{coach}';"
             self.execute_query(query)
             row=self.cursor.fetchone()
 
             if(row==None):
                 return
+            
+            self.create_ticket(train=train,coach=coach,custid=row['WaCuid'])
 
-            query=f"select sysdate();"
-            self.execute_query(query)
-            timerow=self.cursor.fetchone()
-        
-            bookingtime=timerow['sysdate()']
-
-            self.insert_entry(table="tickets",entry=[row["Waid"],train,coach,row["WaCuid"],seatnum,bookingtime])
-            query=f"UPDATE coach_infos SET Cisize=Cisize+1 where CiTrid={train} and CiConame='{coach}'"
-            self.execute_query(query,commit=True)
-
-            query=f"DELETE FROM waitings where Waid={row["Waid"]}"
+            query=f"DELETE FROM waitings where WaTrid={train} and WaConame='{coach}' and WaCuid={custid};"
             self.execute_query(query,commit=True)
         
         return
@@ -336,6 +363,8 @@ class DatabaseConnector:
             query=f"DELETE FROM tickets where TiTrid={train};"
             self.execute_query(query,commit=True)
             query=f"UPDATE coach_infos SET Cisize=0 where CiTrid={train};"
+            self.execute_query(query,commit=True)
+            query=f"UPDATE rac SET RACseatstatus=0 where RACTrid={train};"
             self.execute_query(query,commit=True)
 
         return
@@ -360,4 +389,4 @@ if __name__=="__main__":
 
     connector=DatabaseConnector()
     connector.connect("trainmanagement")
-    print(connector.train_id_retriever("Rajdhani Express"))
+    connector.cancel_ticket(2,123,"A1")

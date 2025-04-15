@@ -47,16 +47,29 @@ def create_coach_info():
             cin.append(0)
             cin.append(coaches[j][1])
             cin.append(int(coaches[j][1]*0.1))
+            cin.append(int(coaches[j][1]*0.1))
             coach_info_data.append(cin)
     
     return coach_info_data
 
-if __name__=="__main__":
+def Create_Coach_RAC_Info():
     connector=DatabaseConnector()
     connector.connect("trainmanagement")
 
     new_infos=create_coach_info()
+    connector.clear_table("rac")
     connector.clear_table("coach_infos")
+    
     for info in new_infos:
         connector.insert_entry("coach_infos",info)
+    
+    for info in new_infos:
+        totalracseats=info[5]
+        totalseats=info[3]
+
+        racseats=random.sample(range(1,totalseats+1),totalracseats)
+        
+        for seat in racseats:
+            connector.insert_entry("rac",[info[0],info[1],seat,0])
+
     print("Coach Infos Updated")
