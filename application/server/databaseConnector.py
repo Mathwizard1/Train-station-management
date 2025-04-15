@@ -233,7 +233,7 @@ class DatabaseConnector:
 
         
     #Create Ticket
-    def create_ticket(self,train,coach,custid,check_available=False):
+    def create_ticket(self,train,coach,custid,check_available=False,give_rac=True):
         if isinstance(train,str):
             train=self.train_id_retriever(train)
         
@@ -252,6 +252,13 @@ class DatabaseConnector:
 
         all_seats=[i for i in range(1,maxsize+1)]
         
+        if(not give_rac):
+            query=f"SELECT RACseatnum from rac where RACTrid={train} and RACConame='{coach}';"
+            self.execute_query(query=query)
+            seats=self.cursor.fetchall()
+            for seat in seats:
+                all_seats.remove(seat["RACseatnum"])
+        
         query=f"SELECT Tiseatnum FROM tickets where TiTrid={train} and TiConame='{coach}';"
         self.execute_query(query)
         rows=self.cursor.fetchall()
@@ -262,6 +269,10 @@ class DatabaseConnector:
         available_seats=list(set(all_seats)-set(taken_seats))
 
         if(len(available_seats)==0):
+            if(not give_rac):
+                print("No Seats Available")
+                return -1,False
+
             query=f"SELECT RACseatnum FROM rac where RACConame='{coach}' and RACTrid={train} and RACseatstatus=0;"
             self.execute_query(query)
             rows=self.cursor.fetchall()
@@ -270,7 +281,7 @@ class DatabaseConnector:
             
             if(len(available_seats)==0):
                 print("No Seats Available")
-                return
+                return -1,False
             else:
                 RACstatus=1
                 first_RAC_ticket=0
@@ -300,6 +311,8 @@ class DatabaseConnector:
 
         query=f"UPDATE coach_infos SET Cisize=Cisize+1 where CiTrid={train} and CiConame='{coach}';"
         self.execute_query(query,commit=True)
+
+        return seatnum,RACstatus
 
     #Create Waiting
     def create_waiting(self,train,coach,custid):
@@ -349,6 +362,19 @@ class DatabaseConnector:
         
         return
     
+    #Check Waiting
+    def check_waiting(self,custid,train,coach):
+        if isinstance(train,str):
+            train=self.train_id_retriever(train)
+
+        query=f"SELECT * FROM waitings where WaTrid={train} and WaConame='{coach}' and WaCuid={custid};"
+        self.execute_query(query)
+        row=self.cursor.fetchall()
+        if(len(row)==0):
+            return False
+        else:
+            return True
+
     #Update Train Status
     def update_train_status(self,train,newstatus):
         if(type(train)==str):
@@ -389,4 +415,3 @@ if __name__=="__main__":
 
     connector=DatabaseConnector()
     connector.connect("trainmanagement")
-    connector.cancel_ticket(2,123,"A1")
