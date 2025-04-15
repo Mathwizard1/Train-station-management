@@ -71,7 +71,16 @@
                 </div>
             </div>
             <div class="row mt-4 justify-content-center">
-                <div class="col-6 d-flex justify-content-center">
+                <div class="col-1 d-flex justify-content-center">
+                    <label class="form-check-label col-form-label" for="waitval">Waiting</label>
+                    <input class="form-check-input" type="checkbox" name="waitval" value="" id="waitval"
+                        onchange="handleWaitBoxChange()">
+                </div>
+                <div class="col-2 d-flex justify-content-center">
+                    <label class="form-check-label col-form-label" for="racval">RAC</label>
+                    <input class="form-check-input" type="checkbox" name="racval" value="" id="racval">
+                </div>
+                <div class="col-3 d-flex justify-content-center">
                     <button type="submit" name="submit" class="btn btn-primary ">Submit</button>
                 </div>
                 <div class="col-6 d-flex justify-content-center">
@@ -80,6 +89,16 @@
             </div>
         </form>
     </div>
+    <script>
+        const waitbox = document.getElementById('waitval');
+        const racbox = document.getElementById('racval');
+    
+        function handleWaitBoxChange() {
+          if (waitbox.checked == true) {
+            racbox.checked = true;
+          }
+        }
+    </script>
     {% elif ticket_booked== 'waiting' %}
     <script>
         function check_Waiting_List() {
@@ -221,6 +240,13 @@
     {% elif ticket_booked== 'cancelled' %}
     <div class="container mt-5">
         <h1 class="mb-4">Tickets Cancelled</h1>
+        <form action="{{ url_for('logout') }}">
+            <button type="logout" name="logout" class="btn btn-danger">LogOut</button>
+        </form>
+    </div>
+    {% elif ticket_booked== 'no_ticket' %}
+    <div class="container mt-5">
+        <h1 class="mb-4">Sorry, No Available tickets</h1>
         <form action="{{ url_for('logout') }}">
             <button type="logout" name="logout" class="btn btn-danger">LogOut</button>
         </form>

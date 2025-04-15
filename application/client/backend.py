@@ -176,12 +176,17 @@ def ticket():
                     coach = request.form['coach_selections']
                     session['coach'] = coach
 
-                    #TODO Ticket system and waiting
                     print(coach)
-                    session['ticket_booked'] = 'waiting'
-                    return redirect(url_for('waiting'))
+                    dbconn.check_ticket_availability()
 
-                    session['ticket_booked'] = 'booked'
+
+                    if('waitval' in request.form):
+                        pass
+                    elif('racval' in request.form):
+                        pass
+
+                    session['ticket_booked'] = 'no_ticket'
+                    return redirect(url_for('ticket'))
             elif('cancel' in request.form):
                 # dbconn.cancel_ticket(session['user_id'], session['train'], session['coach'])
                 session.pop('schedule_id', None)
@@ -191,8 +196,8 @@ def ticket():
                 session['ticket_booked'] = 'cancelled'
                 return render_template('ticket.html', ticket_booked= session['ticket_booked'])
 
-        if(session['ticket_booked'] == 'cancelled'):
-            return render_template('ticket.html', ticket_booked= session['ticket_booked'])
+        if(session['ticket_booked'] == 'cancelled' or session['ticket_booked'] == 'no_ticket'):
+            return render_template('ticket.html', ticket_booked= session['ticket_booked'])       
         
         train_data, _, _ = dbconn.retrieve_schedules(where=f"WHERE Shid={session['schedule_id']}")
         if(dbconn.errorflag):
@@ -201,14 +206,12 @@ def ticket():
         train_data = train_data[0]
         session['train'] = train_data[1]
 
-        # TODO use train id and get coaches list
-        train_id = dbconn.train_id_retriever(train_data[1])
+        # use train id and get coaches list
         customer_data = dbconn.get_customer_data(session['user_id'])
+        coachs = dbconn.train_coach_retriver(train_data[1])
 
         if(dbconn.errorflag):
             return render_template('ticket.html', error_message="SERVER ERROR")
-
-        coachs = ["A1", "B2", "B3"]
 
         print(customer_data)
         print(train_data)
@@ -233,7 +236,6 @@ def ticket():
             param_dict.pop('coachs', None)
             param_dict['coach'] = session['coach']
 
-            # TODO put actual seats and id
             param_dict['ticket_id'] = 12121
             param_dict['seat'] = [1,2,3]
 
