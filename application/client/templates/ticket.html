@@ -71,15 +71,34 @@
                 </div>
             </div>
             <div class="row mt-4 justify-content-center">
-                <div class="col-6 d-flex justify-content-center">
+                <div class="col-1 d-flex justify-content-center">
+                    <label class="form-check-label col-form-label" for="waitval">Waiting</label>
+                    <input class="form-check-input" type="checkbox" name="waitval" value="" id="waitval"
+                        onchange="handleWaitBoxChange()">
+                </div>
+                <div class="col-3 d-flex justify-content-center">
+                    <label class="form-check-label col-form-label" for="racval">RAC</label>
+                    <input class="form-check-input" type="checkbox" name="racval" value="" id="racval">
+                </div>
+                <div class="col-4 d-flex justify-content-center">
                     <button type="submit" name="submit" class="btn btn-primary ">Submit</button>
                 </div>
-                <div class="col-6 d-flex justify-content-center">
+                <div class="col-4 d-flex justify-content-center">
                     <button type="back" name="back" class="btn btn-secondary ">Back</button>
                 </div>
             </div>
         </form>
     </div>
+    <script>
+        const waitbox = document.getElementById('waitval');
+        const racbox = document.getElementById('racval');
+    
+        function handleWaitBoxChange() {
+          if (waitbox.checked == true) {
+            racbox.checked = true;
+          }
+        }
+    </script>
     {% elif ticket_booked== 'waiting' %}
     <script>
         function check_Waiting_List() {
@@ -90,7 +109,7 @@
                     window.location.href = data.redirect_url;
                 } else if (data.status === 'waiting') {
                     // Continue polling after a delay
-                    setTimeout(check_Waiting_List, 10000); //ms
+                    setTimeout(check_Waiting_List, 5000); //ms
                 }
             })
             .catch(error => {
@@ -163,12 +182,12 @@
         <form method="POST">
             <div class="row mb-3">
                 <div class="col-md-6">
-                    <label for="ticket_id" class="col-form-label">Ticket id:</label>
-                    <input type="text" class="form-control readonly" id="ticket_id" name="ticket_id" value="{{ ticket_id }}" readonly>
-                </div>
-                <div class="col-md-6">
                     <label for="seat" class="col-form-label">Seat:</label>
                     <input type="text" class="form-control readonly" id="seat" name="seat" value="{{ seat }}" readonly>
+                </div>
+                <div class="col-md-6">
+                    <label for="rac" class="col-form-label">Rac status:</label>
+                    <input type="text" class="form-control readonly" id="rac" name="rac" value="{{ rac }}" readonly>
                 </div>
             </div>
             <div class="row mb-3">
@@ -221,6 +240,13 @@
     {% elif ticket_booked== 'cancelled' %}
     <div class="container mt-5">
         <h1 class="mb-4">Tickets Cancelled</h1>
+        <form action="{{ url_for('logout') }}">
+            <button type="logout" name="logout" class="btn btn-danger">LogOut</button>
+        </form>
+    </div>
+    {% elif ticket_booked== 'no_ticket' %}
+    <div class="container mt-5">
+        <h1 class="mb-4">Sorry, No Available tickets</h1>
         <form action="{{ url_for('logout') }}">
             <button type="logout" name="logout" class="btn btn-danger">LogOut</button>
         </form>

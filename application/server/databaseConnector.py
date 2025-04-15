@@ -183,7 +183,7 @@ class DatabaseConnector:
          self.execute_query(query)
          row=self.cursor.fetchone()
          if(row==None):
-             print("ERROR: No Such Train")
+            print("ERROR: No Such Train")
          else:
             return row["Trid"]
 
@@ -212,8 +212,6 @@ class DatabaseConnector:
     def check_ticket_availability(self,train,coach):
         if(type(train)==str):
             train=self.train_id_retriever(train)
-            if(train==True):
-                return True
 
         query=f"SELECT * FROM coach_infos where CiConame='{coach}' and CiTrid={train};"
         self.execute_query(query=query)
@@ -357,7 +355,7 @@ class DatabaseConnector:
             
             self.create_ticket(train=train,coach=coach,custid=row['WaCuid'])
 
-            query=f"DELETE FROM waitings where WaTrid={train} and WaConame='{coach}' and WaCuid={custid};"
+            query=f"DELETE FROM waitings where WaTrid={train} and WaConame='{coach}' and WaCuid={row['WaCuid']};"
             self.execute_query(query,commit=True)
         
         return
@@ -377,10 +375,8 @@ class DatabaseConnector:
 
     #Update Train Status
     def update_train_status(self,train,newstatus):
-        if(type(train)==str):
+        if isinstance(train, str):
             train=self.train_id_retriever(train)
-            if(train==True):
-                return train
 
         query=f"UPDATE trains SET Trstatus='{newstatus}' where Trid={train};"
         self.execute_query(query,commit=True)
@@ -415,3 +411,4 @@ if __name__=="__main__":
 
     connector=DatabaseConnector()
     connector.connect("trainmanagement")
+    #connector.cancel_ticket(3, 123, 'A1')
