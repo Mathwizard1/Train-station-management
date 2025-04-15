@@ -1,8 +1,12 @@
 from flask import Flask, render_template, request, redirect, url_for
 from application.server.databaseConnector import DatabaseConnector
 from flask import session, g
+from flask import jsonify
 
 import secrets
+
+# TODO remove this i
+i = 0
 
 app = Flask(__name__)
 app.secret_key = secrets.token_hex(4)
@@ -25,15 +29,14 @@ def close_db(e=None):
     db = g.pop('db', None)
     if db is not None:
         try:
-            # db.close()
-            pass
+            db.close()
         except Exception as e:
             print(f"Error closing database connection: {e}")
 
 @app.route('/')
 def landing():
     sentences = (
-        "Welcome to Ticket Booking. Book Tickets with one click.",
+        "Welcome to Train Booking. Book Tickets with one click.",
         "Fast and Easy. No Hassle.",
         "Tell us your destination and let's go!",
         "Mumbai Delhi Kolkata Chennai Bangalore Hyderabad Srinagar Sikkim.",
@@ -49,13 +52,13 @@ def handle_login():
 @app.route('/login/<login_mode>', methods=['GET', 'POST'])
 def login(login_mode):
     dbconn = get_db()
-    flag = dbconn.set_database("TrainManagement")
+    dbconn.set_database("TrainManagement")
 
-    if(flag):
+    if(dbconn.errorflag):
         return render_template('login.html', login_mode= login_mode, error_message="Failed to connect Dataserver")
 
     if('user_id' in session):
-        return redirect(url_for('home'))
+        return redirect(url_for('schedule'))
 
     if(login_mode == "signin"):
         if request.method == 'POST':
@@ -74,6 +77,7 @@ def login(login_mode):
                     user_found = True
                     session['user_id'] = user_data[0]
                     session['username'] = user_data[1]
+                    session.permanent = True
 
             if user_found:
                 return redirect(url_for('schedule'))
@@ -97,11 +101,11 @@ def login(login_mode):
                 if(current_idx < 0):
                     return render_template('login.html', login_mode= login_mode, error_message="Server Error")
 
-                flag = dbconn.insert_entry('Customers',
+                dbconn.insert_entry('Customers',
                     (current_idx + 1, username, age, gender, password)            
                 )
 
-                if(flag):
+                if(dbconn.errorflag):
                     return render_template('login.html', login_mode= login_mode, error_message="Server Error")
 
                 session['user_id'] = current_idx + 1
@@ -114,56 +118,187 @@ def login(login_mode):
 
 @app.route('/schedule', methods= ['GET', 'POST'])
 def schedule():
-    if(request.method == 'POST'):
-        pass
+    filtering = None
+    a_selected = d_selected = "All"
 
-    dbconn = get_db()
-    flag = dbconn.retrieve_schedules()
+    if('user_id' in session):
+        if(request.method == 'POST'):
+            if('defaulter' in request.form):
+                filtering = None
+                a_selected = d_selected = "All"
+            elif('filter' in request.form):
+                filtering = True
+                a_selected = request.form['arv_select']
+                d_selected = request.form['dep_select']
+            elif('submit' in request.form):
+                if('selected_row' in request.form):
+                    print(request.form['selected_row'])
+                    session['schedule_id'] = request.form['selected_row']
+                    session['ticket_booked'] = "booking"
+                    return redirect((url_for('ticket')))
 
-    if(flag == True):
+        dbconn = get_db()
+        schedule, arv_stat, dep_stat = dbconn.retrieve_schedules()
+
+        if(dbconn.errorflag):
+            return render_template('schedule.html',
+                                   error_message= "Server Not working")
+
+        if(filtering):
+            schedule, arv_stat, dep_stat = dbconn.retrieve_schedules(d_selected, a_selected)
+            #print(a_selected)
+            #print(d_selected)
+        #print(schedule)
+
         return render_template('schedule.html',
-                               error_message= "Server Not working")
+                               schedule_table= schedule,
+                               arv_stat = arv_stat,
+                               dep_stat = dep_stat,
+                               a_selected= a_selected,
+                               d_selected = d_selected)
+    return redirect(url_for('logout'))
 
-    schedule = flag
-    print(schedule)
+@app.route('/ticket', methods= ['GET', 'POST'])
+def ticket():
+    dbconn = get_db()
 
-    return render_template('schedule.html',
-                           schedule_table= schedule)
+    if('user_id' in session and 'schedule_id' in session):
+        if(request.method == "POST"):
+            if(session['ticket_booked'] != 'booked'):
+                if('back' in request.form):
+                    session.pop('schedule_id', None)
+                    session.pop('train', None)
+                    session.pop('coach', None)
+
+                    return redirect(url_for('schedule'))
+                elif('submit' in request.form and 
+                    'coach_selections' in request.form and request.form['coach_selections'] != ""):
+                    coach = request.form['coach_selections']
+                    session['coach'] = coach
+
+                    #TODO Ticket system and waiting
+                    print(coach)
+                    session['ticket_booked'] = 'waiting'
+                    return redirect(url_for('waiting'))
+
+                    session['ticket_booked'] = 'booked'
+            elif('cancel' in request.form):
+                # dbconn.cancel_ticket(session['user_id'], session['train'], session['coach'])
+                session.pop('schedule_id', None)
+                session.pop('train', None)
+                session.pop('coach', None)
+
+                session['ticket_booked'] = 'cancelled'
+                return render_template('ticket.html', ticket_booked= session['ticket_booked'])
+
+        if(session['ticket_booked'] == 'cancelled'):
+            return render_template('ticket.html', ticket_booked= session['ticket_booked'])
+        
+        train_data, _, _ = dbconn.retrieve_schedules(where=f"WHERE Shid={session['schedule_id']}")
+        if(dbconn.errorflag):
+            return render_template('ticket.html', error_message="SERVER ERROR")
+
+        train_data = train_data[0]
+        session['train'] = train_data[1]
+
+        # TODO use train id and get coaches list
+        train_id = dbconn.train_id_retriever(train_data[1])
+        customer_data = dbconn.get_customer_data(session['user_id'])
+
+        if(dbconn.errorflag):
+            return render_template('ticket.html', error_message="SERVER ERROR")
+
+        coachs = ["A1", "B2", "B3"]
+
+        print(customer_data)
+        print(train_data)
+
+        param_dict = {
+            'name': customer_data['Cuname'],
+            'age': customer_data['Cuage'],
+            'gender': customer_data['Cugender'],
+
+            'coachs': coachs,
+
+            'train_name': train_data[1],
+            'arv_station': train_data[2],
+            'arv_time': train_data[3],
+            'dep_station': train_data[4],
+            'dep_time': train_data[5],
+
+            'ticket_booked': session['ticket_booked']
+        }
+
+        if(session['ticket_booked'] == 'booked'):
+            param_dict.pop('coachs', None)
+            param_dict['coach'] = session['coach']
+
+            # TODO put actual seats and id
+            param_dict['ticket_id'] = 12121
+            param_dict['seat'] = [1,2,3]
+
+        return render_template('ticket.html', 
+                    **param_dict)
+    
+    elif('user_id' in session):
+        return redirect(url_for('schedule'))
+    return redirect(url_for('logout'))
+
+@app.route('/check_Waiting_List')
+def check_Waiting_List():
+    # TODO sql waiting list update
+    print("checking")
+
+    global i
+    if i < 2:
+        i += 1
+        return jsonify({"status": "waiting"})
+    else:
+        session['ticket_booked'] = 'booked'
+        return jsonify({"status": "changed", "redirect_url": url_for('ticket')})
 
 
-@app.route('/home', methods= ['GET', 'POST'])
-def home():
-    if('username' in session):
-        form_fields = [
-        {'name': 'name', 'label': 'Name', 'type': 'text'},
-        {'name': 'email', 'label': 'Email', 'type': 'email'},
-        {'name': 'age', 'label': 'Age', 'type': 'number'},
-        ]
-        train_headers = ["Select", 'Train', 'Arv. Station', 'Arv. Time', 'Dep. Station', 'Dep. Time']
-        train_data = [
-            (3, 'Train', 'Arv. Station', 'Arv. Time', 'Dep. Station', 'Dep. Time'),
-            (4, 'Train', 'Arv. Station', 'Arv. Time', 'Dep. Station', 'Dep. Time'),
-            (5, 'Train', 'Arv. Station', 'Arv. Time', 'Dep. Station', 'Dep. Time')
-        ]
-        data_len = len(train_headers)
+@app.route('/waiting', methods= ['GET', 'POST'])
+def waiting():
+    dbconn = get_db()
 
-        # if request.method == 'POST':
-        #     form_data = request.form.to_dict()
-        #     print("Form Data:", form_data)
-        #     #  Here you would process the form data (e.g., save to a database)
-        #     table_data.append(form_data) # just add to table_data for display
-        #     return render_template('home.html', 
-        #             form_fields=form_fields, 
-        #             table_headers=table_headers, 
-        #             table_data=table_data)
+    if('schedule_id' in session and 'coach' in session and 'user_id' in session):
+        if(request.method == "POST" and 'cancel' in request.form):
+            # dbconn.cancel_ticket(session['user_id'], session['train'], session['coach'])
+            session.pop('train', None)
+            session.pop('coach', None)
 
-        return render_template('home.html', 
-                table_headers= train_headers, 
-                table_data= train_data,
-                row_len= data_len,
-                selected_row = 1)
-    return logout()
+            session['ticket_booked'] = 'cancelled'
+            return redirect(url_for('ticket'))
 
+        train_data, _, _ = dbconn.retrieve_schedules(where=f"WHERE Shid={session['schedule_id']}")
+        if(dbconn.errorflag):
+            return render_template('ticket.html', error_message="SERVER ERROR")
+
+        train_data = train_data[0]
+        customer_data = dbconn.get_customer_data(session['user_id'])
+
+        if(dbconn.errorflag):
+            return render_template('ticket.html', error_message="SERVER ERROR")
+
+        param_dict = {
+            'name': customer_data['Cuname'],
+            'age': customer_data['Cuage'],
+            'gender': customer_data['Cugender'],
+
+            'coach': session['coach'],
+
+            'train_name': train_data[1],
+            'arv_station': train_data[2],
+            'arv_time': train_data[3],
+            'dep_station': train_data[4],
+            'dep_time': train_data[5],
+
+            'ticket_booked': session['ticket_booked']
+        }
+
+        return render_template('ticket.html', **param_dict)
+    return redirect(url_for('ticket'))
 
 # For reset session
 @app.route('/logout')

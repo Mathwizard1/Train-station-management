@@ -114,8 +114,8 @@ class DatabaseConnector:
         return row_count['COUNT(*)']
 
     #Retrieve ALL values
-    def retrieve_values(self,table,column="*"):
-        query=f"SELECT {column} FROM {table};"
+    def retrieve_values(self,table,column="*", where=""):
+        query=f"SELECT {column} FROM {table} {where};"
         self.execute_query(query=query,commit=False)
         rows=self.cursor.fetchall()
         output=[]
@@ -127,8 +127,8 @@ class DatabaseConnector:
 
         return output
     
-    def retrieve_schedules(self,dept="",arr=""):
-        rows=self.retrieve_values("schedules")
+    def retrieve_schedules(self,dept="All",arr="All",where=""):
+        rows=self.retrieve_values("schedules",where=where)
 
         query=f"SELECT Trid,Trname from trains;"
         self.execute_query(query)
@@ -146,29 +146,39 @@ class DatabaseConnector:
         for data in stationdata:
             stationdict[data["Stid"]]=data["Stname"]
         
+        arv_stat = set()
+        dep_stat = set()
+
         for row in rows:
             row[1]=traindict[row[1]]
             row[2]=stationdict[row[2]]
             row[3]=row[3].strftime('%I:%M:%S %p %d/%m/%Y')
             row[4]=stationdict[row[4]]
             row[5]=row[5].strftime('%I:%M:%S %p %d/%m/%Y')
+
+            arv_stat.add(row[2])
+            dep_stat.add(row[4])
         
-        if(dept!="" or arr!=""):
+        if(dept!="All" or arr!="All"):
             temprows=[]
             for row in rows:
-                if(dept!="" and arr!=""):
+                if(dept!="All" and arr!="All"):
                     if(row[2]==arr and row[4]==dept):
                         temprows.append(row)
                 elif(row[2]==arr or row[4]==dept):
                     temprows.append(row)
             rows=temprows 
 
-        return rows
-
-        
+        return rows, tuple(arv_stat), tuple(dep_stat)
     
     #Convert Train Name to Train ID
     def train_id_retriever(self,train_name):
+        query=f"SELECT tr.Trid FROM coach_infos as coi inner join trains as tr on coi.CiTrid=tr.Trid where tr.Trname='{train_name}';"
+        self.execute_query(query)
+        row=self.cursor.fetchone()
+        if(row==None):
+            print("ERROR: No Such Train")
+        else:
          query=f"SELECT Trid FROM trains where Trname='{train_name}';"
          self.execute_query(query)
          row=self.cursor.fetchone()
@@ -177,7 +187,25 @@ class DatabaseConnector:
          else:
             return row["Trid"]
 
+    def train_coach_retriver(self,train_id):
+        query=f"SELECT CiConame FROM coach_infos WHERE CiTrid= {train_id};"
+        self.execute_query(query)
+        rows=self.cursor.fetchall()
+        output=[]
+        for row in rows:
+            out=[]
+            for entry in row:
+                out.append(row[entry])
+            output.append(out)
+
+        return output
     
+    def get_customer_data(self, customer_id):
+        query=f"SELECT Cuname,Cuage,Cugender FROM Customers WHERE Cuid= {customer_id};"
+        self.execute_query(query=query,commit=False)
+        row = self.cursor.fetchone()
+        return row
+
     #Check Ticket Availability in Coach
     def check_ticket_availability(self,train,coach):
         if(type(train)==str):
@@ -324,7 +352,9 @@ class DatabaseConnector:
         query=f"INSERT INTO customers VALUES ({info[0]},'{info[1]}',{info[2]},'{info[3]}','{info[4]}');"
         self.execute_query(query,commit=True)
         
-
+    def close(self):
+        self.connection.close()
+        self.cursor = None
 
 if __name__=="__main__":
 

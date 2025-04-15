@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Train Booking</title>
+
+    <!--Add this line for bootstrap-->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.min.css') }}">
+
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/icon.png') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/ticket.css') }}">
+</head>
+<body>
+    <!--Add this line for bootstrap-->
+    <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+    <div class="full-bg-image"></div>
+
+    {% if ticket_booked== 'booking' %}
+    <div class="container mt-5">
+        <h1 class="mb-4">Train Confirmation</h1>
+        <form method="POST">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="name" class="col-form-label">Name:</label>
+                    <input type="text" class="form-control readonly" id="name" name="name" value="{{ name }}" readonly>
+                </div>
+                <div class="col-md-3">
+                    <label for="age" class="col-form-label">Age:</label>
+                    <input type="text" class="form-control readonly" id="age" name="age" value="{{ age }}" readonly>
+                </div>
+                <div class="col-md-3">
+                    <label for="gender" class="col-form-label">Gender:</label>
+                    <input type="text" class="form-control readonly" id="gender" name="gender" value="{{ gender }}" readonly>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="train_name" class="col-form-label">Train Name:</label>
+                    <input type="text" class="form-control readonly" id="train_name" name="train_name" value="{{ train_name }}" readonly>
+                </div>
+                <div class="col-md-6">
+                    <label for="coach_selections" class="col-form-label">Select Coach:</label>
+                    <select class="form-select" id="coach_selections" name="coach_selections">
+                        <option value="" disabled {% if not selected_option %}selected{% endif %}>-- Select an option --</option>
+                        {% for coach_select in coachs %}
+                            <option value="{{ coach_select }}">{{ coach_select }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="arv_station" class="col-form-label">Arrival Station:</label>
+                    <input type="text" class="form-control readonly" id="arv_station" name="arv_station" value="{{ arv_station }}" readonly>
+                </div>
+                <div class="col-md-6">
+                    <label for="arv_time" class="col-form-label">Arrival Time:</label>
+                    <input type="text" class="form-control readonly" id="arv_time" name="arv_time" value="{{ arv_time }}" readonly>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="dep_station" class="col-form-label">Departure Station:</label>
+                    <input type="text" class="form-control readonly" id="dep_station" name="dep_station" value="{{ dep_station }}" readonly>
+                </div>
+                <div class="col-md-6">
+                    <label for="dep_time" class="col-form-label">Departure Time:</label>
+                    <input type="text" class="form-control readonly" id="dep_time" name="dep_time" value="{{ dep_time }}" readonly>
+                </div>
+            </div>
+            <div class="row mt-4 justify-content-center">
+                <div class="col-6 d-flex justify-content-center">
+                    <button type="submit" name="submit" class="btn btn-primary ">Submit</button>
+                </div>
+                <div class="col-6 d-flex justify-content-center">
+                    <button type="back" name="back" class="btn btn-secondary ">Back</button>
+                </div>
+            </div>
+        </form>
+    </div>
+    {% elif ticket_booked== 'waiting' %}
+    <script>
+        function check_Waiting_List() {
+            fetch('/check_Waiting_List')
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'changed') {
+                    window.location.href = data.redirect_url;
+                } else if (data.status === 'waiting') {
+                    // Continue polling after a delay
+                    setTimeout(check_Waiting_List, 10000); //ms
+                }
+            })
+            .catch(error => {
+                console.error('Error checking status:', error);
+                setTimeout(check_Waiting_List, 60000); //ms
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            check_Waiting_List();
+        });
+    </script>
+    <div class="container mt-5">
+        <h1 class="mb-4">Waiting List</h1>
+        <form method="POST">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="name" class="col-form-label">Name:</label>
+                    <input type="text" class="form-control readonly" id="name" name="name" value="{{ name }}" readonly>
+                </div>
+                <div class="col-md-3">
+                    <label for="age" class="col-form-label">Age:</label>
+                    <input type="text" class="form-control readonly" id="age" name="age" value="{{ age }}" readonly>
+                </div>
+                <div class="col-md-3">
+                    <label for="gender" class="col-form-label">Gender:</label>
+                    <input type="text" class="form-control readonly" id="gender" name="gender" value="{{ gender }}" readonly>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="train_name" class="col-form-label">Train Name:</label>
+                    <input type="text" class="form-control readonly" id="train_name" name="train_name" value="{{ train_name }}" readonly>
+                </div>
+                <div class="col-md-6">
+                    <label for="coach" class="col-form-label">Coach:</label>
+                    <input type="text" class="form-control readonly" id="coach" name="coach" value="{{ coach }}" readonly>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="arv_station" class="col-form-label">Arrival Station:</label>
+                    <input type="text" class="form-control readonly" id="arv_station" name="arv_station" value="{{ arv_station }}" readonly>
+                </div>
+                <div class="col-md-6">
+                    <label for="arv_time" class="col-form-label">Arrival Time:</label>
+                    <input type="text" class="form-control readonly" id="arv_time" name="arv_time" value="{{ arv_time }}" readonly>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="dep_station" class="col-form-label">Departure Station:</label>
+                    <input type="text" class="form-control readonly" id="dep_station" name="dep_station" value="{{ dep_station }}" readonly>
+                </div>
+                <div class="col-md-6">
+                    <label for="dep_time" class="col-form-label">Departure Time:</label>
+                    <input type="text" class="form-control readonly" id="dep_time" name="dep_time" value="{{ dep_time }}" readonly>
+                </div>
+            </div>
+            <div class="row mt-4 justify-content-center">
+                <div class="col-6 d-flex justify-content-center">
+                    <button type="cancel" name="cancel" class="btn btn-danger">Cancel</button>
+                </div>
+            </div>
+        </form>
+    </div>
+    {% elif ticket_booked== 'booked' %}
+    <div class="container mt-5">
+        <h1 class="mb-4">Tickets Confirmed</h1>
+        <form method="POST">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="ticket_id" class="col-form-label">Ticket id:</label>
+                    <input type="text" class="form-control readonly" id="ticket_id" name="ticket_id" value="{{ ticket_id }}" readonly>
+                </div>
+                <div class="col-md-6">
+                    <label for="seat" class="col-form-label">Seat:</label>
+                    <input type="text" class="form-control readonly" id="seat" name="seat" value="{{ seat }}" readonly>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="name" class="col-form-label">Name:</label>
+                    <input type="text" class="form-control readonly" id="name" name="name" value="{{ name }}" readonly>
+                </div>
+                <div class="col-md-6">
+                    <label for="age" class="col-form-label">Age:</label>
+                    <input type="text" class="form-control readonly" id="age" name="age" value="{{ age }}" readonly>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="train_name" class="col-form-label">Train Name:</label>
+                    <input type="text" class="form-control readonly" id="train_name" name="train_name" value="{{ train_name }}" readonly>
+                </div>
+                <div class="col-md-6">
+                    <label for="coach" class="col-form-label">Coach:</label>
+                    <input type="text" class="form-control readonly" id="coach" name="coach" value="{{ coach }}" readonly>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="arv_station" class="col-form-label">Arrival Station:</label>
+                    <input type="text" class="form-control readonly" id="arv_station" name="arv_station" value="{{ arv_station }}" readonly>
+                </div>
+                <div class="col-md-6">
+                    <label for="arv_time" class="col-form-label">Arrival Time:</label>
+                    <input type="text" class="form-control readonly" id="arv_time" name="arv_time" value="{{ arv_time }}" readonly>
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label for="dep_station" class="col-form-label">Departure Station:</label>
+                    <input type="text" class="form-control readonly" id="dep_station" name="dep_station" value="{{ dep_station }}" readonly>
+                </div>
+                <div class="col-md-6">
+                    <label for="dep_time" class="col-form-label">Departure Time:</label>
+                    <input type="text" class="form-control readonly" id="dep_time" name="dep_time" value="{{ dep_time }}" readonly>
+                </div>
+            </div>
+            <div class="row mt-4 justify-content-center">
+                <div class="col-6 d-flex justify-content-center">
+                    <button type="cancel" name="cancel" class="btn btn-danger">Cancel</button>
+                </div>
+            </div>
+        </form>
+    </div>
+    {% elif ticket_booked== 'cancelled' %}
+    <div class="container mt-5">
+        <h1 class="mb-4">Tickets Cancelled</h1>
+        <form action="{{ url_for('logout') }}">
+            <button type="logout" name="logout" class="btn btn-danger">LogOut</button>
+        </form>
+    </div>
+    {% else %}
+    <div class="container mt-5">
+        <h1 class="mb-4">{{ error_message }}</h1>
+        <form action="{{ url_for('logout') }}">
+            <button type="logout" name="logout" class="btn btn-danger">LogOut</button>
+        </form>
+    </div>
+    {% endif %}
+</body>
+</html>
