@@ -169,7 +169,7 @@ class DatabaseConnector:
     
     #Convert Train Name to Train ID
     def train_id_retriever(self,train_name):
-         query=f"SELECT tr.Trid FROM coach_infos as coi inner join trains as tr on coi.CiTrid=tr.Trid where tr.Trname='{train_name}';"
+         query=f"SELECT Trid FROM trains where Trname='{train_name}';"
          self.execute_query(query)
          row=self.cursor.fetchone()
          if(row==None):
@@ -330,3 +330,4 @@ if __name__=="__main__":
 
     connector=DatabaseConnector()
     connector.connect("trainmanagement")
+    print(connector.train_id_retriever("Rajdhani Express"))
