@@ -61,7 +61,7 @@ def create_schedule():
             st_sample.append((station_data[i], station_data[j]))
 
     start_time = datetime.strptime("00:00:00", "%H:%M:%S")
-    day=str(date.today() + timedelta(days=i))
+    day=str(date.today() + timedelta(days=0))
     used=[]
     totaltime=0
     idcounter=0
@@ -105,14 +105,26 @@ if __name__=="__main__":
     connector=DatabaseConnector()
     connector.connect("trainmanagement")
     clock=0
-    update_time=1 #minutes
+    update_time=60 #minutes
 
     
     while(True):
-        time.sleep(60)
+        time.sleep(10)
         clock+=1
 
-        if(clock%(update_time)==0):
+        query=f"Select * from schedules;"
+        connector.execute_query(query)
+        rows=connector.cursor.fetchall()
+        for row in rows:
+            if row["Shdeptime"].timestamp()-datetime.now().timestamp()>0:
+               query=f"UPDATE trains set Trstatus='Departed' where Trid={row['ShTrid']} and Trstatus!='Departed';"
+               connector.execute_query(query,commit=True)
+            
+            if row["Sharvtime"].timestamp()-datetime.now().timestamp()>0:
+               query=f"UPDATE trains set Trstatus='Stationed' where Trid={row['ShTrid']} and Trstatus!='Stationed';"
+               connector.execute_query(query,commit=True)
+
+        if(clock/6%(update_time)==0):
             new_schedules=create_schedule()
             connector.clear_table("schedules")
             for schedule in new_schedules:
