@@ -13,17 +13,17 @@ coach_data = (
         ("HCPV", 26), # High Capacity Parcel Van
     )
 
-# coach_data = (
-#         ("SLR", 1),  # Seating cum Luggage Rake
-#         ("GS", 1),   # General Second Class
-#         ("A1", 1),   # AC First Class
-#         ("A2", 1),   # AC Two Tier
-#         ("A3", 1),   # AC Three Tier
-#         ("B1", 1),   # AC Three Tier (older type)
-#         ("S1", 1),   # Sleeper Class
-#         ("PC", 1),   # Pantry Car
-#         ("HCPV", 1), # High Capacity Parcel Van
-#     )
+coach_data = (
+        ("SLR", 1),  # Seating cum Luggage Rake
+        ("GS", 1),   # General Second Class
+        ("A1", 1),   # AC First Class
+        ("A2", 1),   # AC Two Tier
+        ("A3", 1),   # AC Three Tier
+        ("B1", 1),   # AC Three Tier (older type)
+        ("S1", 1),   # Sleeper Class
+        ("PC", 1),   # Pantry Car
+        ("HCPV", 1), # High Capacity Parcel Van
+    )
 
 train_data = (
         (123, "Rajdhani Express", "Departed"),

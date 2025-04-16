@@ -185,5 +185,27 @@
     <script>
         document.getElementById("defaultOpen").click();
     </script>
+    <script>
+        function schedule() {
+            fetch('/schedule')
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'changed') {
+                    window.location.href = data.redirect_url;
+                } else if (data.status === 'waiting') {
+                    // Continue polling after a delay
+                    setTimeout(schedule, 12000); //ms
+                }
+            })
+            .catch(error => {
+                console.error('Error checking status:', error);
+                setTimeout(schedule, 60000); //ms
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            schedule();
+        });
+    </script>
 </body>
 </html>

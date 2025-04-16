@@ -100,27 +100,26 @@ def create_schedule():
                 break
     return schedule_data
 
-if __name__=="__main__":
-
+def scheduler_call():
     connector=DatabaseConnector()
     connector.connect("trainmanagement")
-    clock=0
-    update_time=60 #minutes
+    clock= -1
+    update_time=24 * 60 #minutes
 
-    
     while(True):
-        time.sleep(10)
+        print(f"scheduler {clock}")
         clock+=1
 
         query=f"Select * from schedules;"
         connector.execute_query(query)
         rows=connector.cursor.fetchall()
         for row in rows:
-            if row["Shdeptime"].timestamp()-datetime.now().timestamp()>0:
+
+            if row["Shdeptime"].timestamp()-datetime.now().timestamp()<0:
                query=f"UPDATE trains set Trstatus='Departed' where Trid={row['ShTrid']} and Trstatus!='Departed';"
                connector.execute_query(query,commit=True)
-            
-            if row["Sharvtime"].timestamp()-datetime.now().timestamp()>0:
+
+            if row["Sharvtime"].timestamp()-datetime.now().timestamp()<0:
                query=f"UPDATE trains set Trstatus='Stationed' where Trid={row['ShTrid']} and Trstatus!='Stationed';"
                connector.execute_query(query,commit=True)
 
@@ -130,5 +129,12 @@ if __name__=="__main__":
             for schedule in new_schedules:
                 connector.insert_entry("schedules",schedule)
             print("Schedules Updated")
+
+        time.sleep(10)
+
+if __name__=="__main__":
+    #scheduler_call()
+    pass
+    
 
 

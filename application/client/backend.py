@@ -1,8 +1,11 @@
 from flask import Flask, render_template, request, redirect, url_for
 from application.server.databaseConnector import DatabaseConnector
+from schedulecycle import scheduler_call
+
 from flask import session, g
 from flask import jsonify
 
+import multiprocessing
 import threading
 import secrets
 
@@ -36,6 +39,7 @@ def close_db(e=None):
 def landing():
     sentences = (
         "Welcome to Train Booking. Book Tickets with one click.",
+        "By Anshurup, Tejeshwar, Siddarth"
         "Fast and Easy. No Hassle.",
         "Tell us your destination and let's go!",
         "Mumbai Delhi Kolkata Chennai Bangalore Hyderabad Srinagar Sikkim.",
@@ -115,6 +119,7 @@ def login(login_mode):
                 return render_template('login.html', login_mode= login_mode, error_message="Password Mismatch")
     return render_template('login.html', login_mode= login_mode)
 
+
 @app.route('/schedule', methods= ['GET', 'POST'])
 def schedule():
     filtering = None
@@ -161,6 +166,15 @@ def schedule():
 def ticket():
     dbconn = get_db()
 
+    sentences = (
+        "Welcome to Train Booking. Book Tickets with one click.",
+        "By Anshurup, Tejeshwar, Siddarth"
+        "Fast and Easy. No Hassle.",
+        "Tell us your destination and let's go!",
+        "Mumbai Delhi Kolkata Chennai Bangalore Hyderabad Srinagar Sikkim.",
+        "We provide the best journey possible"
+    )
+
     if('user_id' in session and 'schedule_id' in session):
         if(request.method == "POST"):
             if(session['ticket_booked'] != 'booked'):
@@ -204,14 +218,14 @@ def ticket():
                 session.pop('coach', None)
 
                 session['ticket_booked'] = 'cancelled'
-                return render_template('ticket.html', ticket_booked= session['ticket_booked'])
+                return render_template('ticket.html', sentences=sentences, ticket_booked= session['ticket_booked'])
 
         if(session['ticket_booked'] == 'cancelled' or session['ticket_booked'] == 'no_ticket'):
-            return render_template('ticket.html', ticket_booked= session['ticket_booked'])       
+            return render_template('ticket.html', sentences=sentences, ticket_booked= session['ticket_booked'])       
         
         train_data, _, _ = dbconn.retrieve_schedules(where=f"WHERE Shid={session['schedule_id']}")
         if(dbconn.errorflag):
-            return render_template('ticket.html', error_message="SERVER ERROR")
+            return render_template('ticket.html', sentences=sentences, error_message="SERVER ERROR")
 
         train_data = train_data[0]
         session['train'] = train_data[1]
@@ -221,7 +235,7 @@ def ticket():
         coachs = dbconn.train_coach_retriver(train_data[1])
 
         if(dbconn.errorflag):
-            return render_template('ticket.html', error_message="SERVER ERROR")
+            return render_template('ticket.html', sentences=sentences, error_message="SERVER ERROR")
 
         print(customer_data)
         print(train_data)
@@ -250,7 +264,7 @@ def ticket():
             param_dict['seat'] = session['seat']
             param_dict['rac'] = session['rac']
 
-        return render_template('ticket.html', 
+        return render_template('ticket.html', sentences=sentences, 
                     **param_dict)
     
     elif('user_id' in session):
@@ -324,11 +338,16 @@ def waiting():
 @app.route('/logout')
 def logout():
     session.clear()
-    return redirect(url_for('login', login_mode= 'signin'))
+    return redirect(url_for('login', login_mode="signin"))
 
 if __name__ == '__main__':
     ports = [5000, 5001]
     threads = []
+
+    proc = multiprocessing.Process(
+        target= scheduler_call
+    )
+    proc.start()
 
     app.run(debug=True, port= ports[0])
     exit()

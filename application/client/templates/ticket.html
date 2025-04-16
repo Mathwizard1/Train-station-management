@@ -18,8 +18,8 @@
     <div class="full-bg-image"></div>
 
     {% if ticket_booked== 'booking' %}
-    <div class="container mt-5">
-        <h1 class="mb-4">Train Confirmation</h1>
+    <div class="container-bg mt-5">
+        <h1 class="mb-4 header_text">Train Confirmation</h1>
         <form method="POST">
             <div class="row mb-3">
                 <div class="col-md-6">
@@ -122,8 +122,8 @@
             check_Waiting_List();
         });
     </script>
-    <div class="container mt-5">
-        <h1 class="mb-4">Waiting List</h1>
+    <div class="container-bg mt-5">
+        <h1 class="mb-4 header_text">Waiting List</h1>
         <form method="POST">
             <div class="row mb-3">
                 <div class="col-md-6">
@@ -177,8 +177,8 @@
         </form>
     </div>
     {% elif ticket_booked== 'booked' %}
-    <div class="container mt-5">
-        <h1 class="mb-4">Tickets Confirmed</h1>
+    <div class="container-bg mt-5">
+        <h1 class="mb-4 header_text">Tickets Confirmed</h1>
         <form method="POST">
             <div class="row mb-3">
                 <div class="col-md-6">
@@ -238,26 +238,33 @@
         </form>
     </div>
     {% elif ticket_booked== 'cancelled' %}
-    <div class="container mt-5">
-        <h1 class="mb-4">Tickets Cancelled</h1>
+    <div class="container-bg mt-5">
+        <h1 class="mb-4 header_text">Tickets Cancelled</h1>
         <form action="{{ url_for('logout') }}">
             <button type="logout" name="logout" class="btn btn-danger">LogOut</button>
         </form>
     </div>
     {% elif ticket_booked== 'no_ticket' %}
-    <div class="container mt-5">
-        <h1 class="mb-4">Sorry, No Available tickets</h1>
+    <div class="container-bg mt-5">
+        <h1 class="mb-4 header_text">Sorry, No Available tickets</h1>
         <form action="{{ url_for('logout') }}">
             <button type="logout" name="logout" class="btn btn-danger">LogOut</button>
         </form>
     </div>
     {% else %}
-    <div class="container mt-5">
-        <h1 class="mb-4">{{ error_message }}</h1>
+    <div class="container-bg mt-5">
+        <h1 class="mb-4 header_text">{{ error_message }}</h1>
         <form action="{{ url_for('logout') }}">
             <button type="logout" name="logout" class="btn btn-danger">LogOut</button>
         </form>
     </div>
     {% endif %}
+    <div class="scrolling-text-container fixed-top" style="top: 92vh;">
+        <div class="scrolling-text">
+            {% for sentence in sentences %}
+                <span>{{ sentence }}</span>
+            {% endfor %}
+        </div>
+    </div>
 </body>
 </html>
